@@ -1405,8 +1405,8 @@ function genCareerPlan(bazi, dr, ui) {
 
   // 根据十神和性别生成婚恋提示（20~49岁适用）
   function getDayunLoveDesc(shishen, ageStart, ageEnd, gender, ori) {
-    // 只在20~49岁之间显示婚恋提示
-    if (ageEnd < 20 || ageStart > 49) return '';
+    // 只在21岁及以上显示婚恋提示（11~20岁大运不显示）
+    if (ageEnd <= 20 || ageStart > 49) return '';
     const isMale = gender === '男';
     const isFemale = gender === '女';
     const targetMale = (isFemale && ori === '男') || (isMale && ori === '男') || ori === '均可';
