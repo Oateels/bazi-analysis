@@ -284,14 +284,18 @@ function toJulianDay(y, m, d, h) {
 }
 
 // ========== SUN LONGITUDE (VSOP87 simplified) ==========
+const _DEG2RAD = Math.PI / 180;
 function sunLongitude(JD) {
   const T = (JD - 2451545.0) / 36525.0;
   const L0 = (280.46646 + 36000.76983 * T + 0.0003032 * T * T) % 360;
   const M = (357.52911 + 35999.05029 * T - 0.0001537 * T * T) % 360;
-  const Mr = M * Math.PI / 180;
-  const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(Mr)
-    + (0.019993 - 0.000101 * T) * Math.sin(2 * Mr)
-    + 0.000289 * Math.sin(3 * Mr);
+  const Mr = M * _DEG2RAD;
+  const sinMr = Math.sin(Mr);
+  const sin2Mr = Math.sin(2 * Mr);
+  const sin3Mr = Math.sin(3 * Mr);
+  const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * sinMr
+    + (0.019993 - 0.000101 * T) * sin2Mr
+    + 0.000289 * sin3Mr;
   return (L0 + C + 360) % 360;
 }
 
@@ -308,7 +312,8 @@ function solarTermJD(year, angleDeg) {
   const m = monthMap[angleDeg] || 6;
   let jdLow = toJulianDay(year, m, 1, 0);
   let jdHigh = toJulianDay(m === 12 ? year + 1 : year, m === 12 ? 1 : m + 1, 1, 0);
-  for (let i = 0; i < 50; i++) {
+  // 25次二分搜索迭代即可达到~0.01天精度（约15分钟），足够排盘使用
+  for (let i = 0; i < 25; i++) {
     const jdMid = (jdLow + jdHigh) / 2;
     const lon = sunLongitude(jdMid);
     const diff = ((lon - angleDeg + 180) % 360) - 180;
@@ -317,6 +322,17 @@ function solarTermJD(year, angleDeg) {
   const result = (jdLow + jdHigh) / 2;
   _solarTermCache[cacheKey] = result;
   return result;
+}
+
+// 批量预计算指定年份的所有节气，一次性填入缓存，避免散点调用的重复开销
+function precomputeSolarTerms(year) {
+  const stAngles = [315,345,15,45,75,105,135,165,195,225,255,285,270,300,0,30,60,90,120,150,180,210,240];
+  for (const angle of stAngles) {
+    const key = year + '_' + angle;
+    if (_solarTermCache[key] === undefined) {
+      _solarTermCache[key] = solarTermJD(year, angle);
+    }
+  }
 }
 
 // ========== YEAR PILLAR ==========
@@ -667,8 +683,7 @@ function populateDateSelects() {
 
 // ========== MAIN SUBMIT ==========
 function onSubmit() {
-  // 清空节气缓存，确保每次排盘数据正确
-  for (const key in _solarTermCache) delete _solarTermCache[key];
+  // 不再清空缓存，改为预计算相关年份的节气
   const year = parseInt(document.getElementById('birth-year').value);
   const month = parseInt(document.getElementById('birth-month').value);
   const day = parseInt(document.getElementById('birth-day').value);
@@ -688,6 +703,12 @@ function onSubmit() {
     : '未找到"' + birthCityName + '"的经纬度，使用默认东经120°（可能影响真太阳时修正）';
   const trueTime = getTrueSolarTime(hour, minute, birthLng);
   const trueHour = trueTime.hour, trueMinute = trueTime.minute;
+
+  // 预计算出生年、前一年、后一年的所有节气（覆盖立春前后跨年情况）
+  precomputeSolarTerms(year);
+  precomputeSolarTerms(year - 1);
+  precomputeSolarTerms(year + 1);
+
   const yearPillar = getYearPillar(year, month, day);
   const monthPillar = getMonthPillar(year, month, day, trueHour, trueMinute);
   const dayPillar = getDayPillar(year, month, day);
@@ -724,23 +745,34 @@ function renderResults(bazi, wuxingPower, analysis, dayunResult, ui) {
   const container = document.getElementById('result-area');
   const maxP = Math.max(...wuxingPower);
   const pcts = wuxingPower.map(p => maxP > 0 ? Math.round(p / maxP * 100) : 0);
-  container.innerHTML = '<div class="section fade-in"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><div><div style="font-size:14px;color:var(--text-muted);">' + ui.gender + ' · ' + (ui.birthCity||'未知') + ' · ' + ui.year + '-' + ui.month + '-' + ui.day + '</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">真太阳时: ' + ui.trueSolarTime + ' | 经度: ' + ui.birthLng + '°</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">婚恋: ' + ui.marriageStatus + ' | 偏好: ' + ui.sexualOrientation + '</div></div><button onclick="goBack()" style="background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">重新排盘</button></div></div>' +
-    '<div class="section fade-in"><div class="section-title">八字排盘</div><div class="bazi-chart">' +
-    renderPillar('年柱', bazi.year, bazi.day.ganIdx) + renderPillar('月柱', bazi.month, bazi.day.ganIdx) + renderPillar('日柱', bazi.day, bazi.day.ganIdx) + renderPillar('时柱', bazi.hour, bazi.day.ganIdx) +
-    '</div></div>' +
-    '<div class="section fade-in"><div class="section-title">个人属性概括</div><div class="analysis-block">' + genPersonaProfile(bazi, wuxingPower, analysis, ui) + '</div></div>' +
-    '<div class="section fade-in"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' +
-    WUXING_LIST.map((wx,i) => '<div class="wuxing-bar-item"><div class="wuxing-bar-label" style="color:'+WUXING_COLORS[i]+'">'+wx+' '+wuxingPower[i].toFixed(1)+'</div><div class="wuxing-bar-track"><div class="wuxing-bar-fill" style="width:'+pcts[i]+'%;background:'+WUXING_COLORS[i]+'"></div></div></div>').join('') +
-    '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '，日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong>（' + getWuxingDesc(analysis.yongShen) + '） | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong>（' + getWuxingDesc(analysis.jiShen) + '）<br><span style="font-size:12px;color:var(--text-muted);">💡 用神是你命局最需要的能量方向，忌神是容易过量的方向——下方"八字基本分析"板块有详细解读</span></p></div></div>' +
-    '<div class="section fade-in"><div class="section-title">大运走势</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">起运年龄：约' + Math.round(dayunResult.yearsToFirst) + '岁（' + (ui.year + Math.round(dayunResult.yearsToFirst)) + '年）' + (dayunResult.forward ? '顺排' : '逆排') + '</div><div class="dayun-timeline"><div class="dayun-track">' +
-    dayunResult.dayun.map(dy => { const cy = new Date().getFullYear(); const ca = cy - ui.year; const ic = ca >= dy.ageStart && ca <= dy.ageEnd; return '<div class="dayun-item '+(ic?'is-current':'')+'"><div class="dayun-ganzhi">'+dy.ganzhi+'</div><div class="dayun-age">'+dy.ageStart+'-'+dy.ageEnd+'岁</div><div class="dayun-year" style="font-size:11px;color:var(--text-muted);">'+(ui.year+dy.ageStart)+'-'+(ui.year+dy.ageEnd)+'</div><div class="dayun-shishen">'+dy.shishen+'</div>'+(ic?'<div style="font-size:10px;color:var(--accent);margin-top:2px;">★当前</div>':'')+'</div>'; }).join('') +
-    '</div></div></div>' +
-    '<div class="section fade-in"><div class="section-title">八字基本分析</div><div class="analysis-block">' + genBasicAnalysis(bazi, wuxingPower, analysis, ui) + '</div></div>' +
-    '<div class="section fade-in"><div class="section-title">适合行业方向</div><div class="analysis-block">' + genIndustry(bazi, analysis, ui) + '</div></div>' +
-    (function(){ const sja = genSideJobAnalysis(bazi, analysis, ui); return sja ? '<div class="section fade-in"><div class="section-title">副业/兴趣与八字分析</div><div class="analysis-block">' + sja + '</div></div>' : ''; })() +
-    '<div class="section fade-in"><div class="section-title">未来10年职业规划</div><div class="analysis-block">' + genCareerPlan(bazi, dayunResult, ui) + '</div></div>' +
-    '<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui) + '</div></div>' +
-    '<div class="section fade-in"><div class="section-title">2026年行动清单</div><div class="analysis-block">' + genAction2026(bazi, dayunResult, ui, analysis) + '</div></div>';
+  const parts = [];
+  parts.push('<div class="section fade-in"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><div><div style="font-size:14px;color:var(--text-muted);">' + ui.gender + ' · ' + (ui.birthCity||'未知') + ' · ' + ui.year + '-' + ui.month + '-' + ui.day + '</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">真太阳时: ' + ui.trueSolarTime + ' | 经度: ' + ui.birthLng + '°</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">婚恋: ' + ui.marriageStatus + ' | 偏好: ' + ui.sexualOrientation + '</div></div><button onclick="goBack()" style="background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">重新排盘</button></div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">八字排盘</div><div class="bazi-chart">' + renderPillar('年柱', bazi.year, bazi.day.ganIdx) + renderPillar('月柱', bazi.month, bazi.day.ganIdx) + renderPillar('日柱', bazi.day, bazi.day.ganIdx) + renderPillar('时柱', bazi.hour, bazi.day.ganIdx) + '</div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">个人属性概括</div><div class="analysis-block">' + genPersonaProfile(bazi, wuxingPower, analysis, ui) + '</div></div>');
+  // 五行柱状图
+  const barParts = [];
+  for (let i = 0; i < WUXING_LIST.length; i++) {
+    barParts.push('<div class="wuxing-bar-item"><div class="wuxing-bar-label" style="color:'+WUXING_COLORS[i]+'">'+WUXING_LIST[i]+' '+wuxingPower[i].toFixed(1)+'</div><div class="wuxing-bar-track"><div class="wuxing-bar-fill" style="width:'+pcts[i]+'%;background:'+WUXING_COLORS[i]+'"></div></div></div>');
+  }
+  parts.push('<div class="section fade-in"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' + barParts.join('') + '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '，日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong>（' + getWuxingDesc(analysis.yongShen) + '） | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong>（' + getWuxingDesc(analysis.jiShen) + '）<br><span style="font-size:12px;color:var(--text-muted);">💡 用神是你命局最需要的能量方向，忌神是容易过量的方向——下方"八字基本分析"板块有详细解读</span></p></div></div>');
+  // 大运
+  const dayunParts = [];
+  const cy = new Date().getFullYear();
+  for (let di = 0; di < dayunResult.dayun.length; di++) {
+    const dy = dayunResult.dayun[di];
+    const ca = cy - ui.year;
+    const ic = ca >= dy.ageStart && ca <= dy.ageEnd;
+    dayunParts.push('<div class="dayun-item '+(ic?'is-current':'')+'"><div class="dayun-ganzhi">'+dy.ganzhi+'</div><div class="dayun-age">'+dy.ageStart+'-'+dy.ageEnd+'岁</div><div class="dayun-year" style="font-size:11px;color:var(--text-muted);">'+(ui.year+dy.ageStart)+'-'+(ui.year+dy.ageEnd)+'</div><div class="dayun-shishen">'+dy.shishen+'</div>'+(ic?'<div style="font-size:10px;color:var(--accent);margin-top:2px;">★当前</div>':'')+'</div>');
+  }
+  parts.push('<div class="section fade-in"><div class="section-title">大运走势</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">起运年龄：约' + Math.round(dayunResult.yearsToFirst) + '岁（' + (ui.year + Math.round(dayunResult.yearsToFirst)) + '年）' + (dayunResult.forward ? '顺排' : '逆排') + '</div><div class="dayun-timeline"><div class="dayun-track">' + dayunParts.join('') + '</div></div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">八字基本分析</div><div class="analysis-block">' + genBasicAnalysis(bazi, wuxingPower, analysis, ui) + '</div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">适合行业方向</div><div class="analysis-block">' + genIndustry(bazi, analysis, ui) + '</div></div>');
+  const sja = genSideJobAnalysis(bazi, analysis, ui);
+  if (sja) parts.push('<div class="section fade-in"><div class="section-title">副业/兴趣与八字分析</div><div class="analysis-block">' + sja + '</div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">未来10年职业规划</div><div class="analysis-block">' + genCareerPlan(bazi, dayunResult, ui) + '</div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui) + '</div></div>');
+  parts.push('<div class="section fade-in"><div class="section-title">2026年行动清单</div><div class="analysis-block">' + genAction2026(bazi, dayunResult, ui, analysis) + '</div></div>');
+  container.innerHTML = parts.join('');
   // 直接显示所有内容
   requestAnimationFrame(() => { document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible')); });
 }
@@ -1386,6 +1418,7 @@ function genCareerPlan(bazi, dr, ui) {
     return desc;
   }
 
+  const cardParts = [];
   dr.dayun.forEach(dy => {
     const sy = by+dy.ageStart, ey = by+dy.ageEnd;
     const ic = cy>=sy && cy<=ey;
@@ -1396,8 +1429,9 @@ function genCareerPlan(bazi, dr, ui) {
     if (loveDesc) {
       cardContent += '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span style="font-size:12px;color:var(--accent);font-weight:500;">💕 婚恋提示</span><p style="margin-top:4px;font-size:13px;color:var(--text-secondary);line-height:1.7;">'+loveDesc+'</p></div>';
     }
-    h += '<div class="card" style="'+(ic?'border-color:var(--accent)':'')+'"><div style="font-size:15px;font-weight:600;color:'+(ic?'var(--accent)':'var(--text-primary)')+';">'+dy.ganzhi+'大运（'+sy+'-'+ey+'，'+dy.ageStart+'-'+dy.ageEnd+'岁）'+phaseLabel+(ic?' ← 当前':'')+'</div>'+cardContent+'</div>';
+    cardParts.push('<div class="card" style="'+(ic?'border-color:var(--accent)':'')+'"><div style="font-size:15px;font-weight:600;color:'+(ic?'var(--accent)':'var(--text-primary)')+';">'+dy.ganzhi+'大运（'+sy+'-'+ey+'，'+dy.ageStart+'-'+dy.ageEnd+'岁）'+phaseLabel+(ic?' ← 当前':'')+'</div>'+cardContent+'</div>');
   });
+  h += cardParts.join('');
 
   h += '<h3>未来10年关键节点</h3><ul>';
   // 未来10年也根据当前年龄给出不同侧重点
