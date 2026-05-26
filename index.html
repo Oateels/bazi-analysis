@@ -802,7 +802,7 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
   };
   const batch3 = function() {
     document.getElementById('slot-marriage').outerHTML = '<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui, analysis) + '</div></div>';
-    document.getElementById('slot-action').outerHTML = '<div class="section fade-in"><div class="section-title">2026年行动清单</div><div class="analysis-block">' + genAction2026(bazi, dayunResult, ui, analysis) + '</div></div>';
+    document.getElementById('slot-action').outerHTML = '<div class="section fade-in"><div class="section-title">今年行动清单</div><div class="analysis-block">' + genActionList(bazi, dayunResult, ui, analysis) + '</div></div>';
     requestAnimationFrame(() => { document.querySelectorAll('.section.fade-in:not(.visible)').forEach(el => el.classList.add('visible')); });
   };
   setTimeout(batch1, 50);
@@ -1727,63 +1727,130 @@ function genMarriage(bazi, dr, ui, an) {
   return h;
 }
 
-function genAction2026(bazi, dr, ui, analysis) {
-  const ln2026=getLiunian(2026), ls=getShishen(bazi.day.ganIdx,ln2026.ganIdx);
+function genActionList(bazi, dr, ui, analysis) {
+  const cy = new Date().getFullYear();
+  const ln = getLiunian(cy), ls = getShishen(bazi.day.ganIdx, ln.ganIdx);
+  const dg = bazi.day.gan, dw = GAN_WUXING[bazi.day.ganIdx];
   const ms = ui.marriageStatus || '单身';
   const ori = ui.sexualOrientation || '均可';
-  const ys = analysis.yongShen;
+  const ys = analysis.yongShen, js = analysis.jiShen;
+  const futureAge = cy - ui.year;
+
+  // 获取当前大运
+  let currentDy = null;
+  for (let i = 0; i < dr.dayun.length; i++) {
+    const dy = dr.dayun[i];
+    if (futureAge >= dy.ageStart && futureAge <= dy.ageEnd) { currentDy = dy; break; }
+  }
+  const dySs = currentDy ? currentDy.shishen : '';
+  const dyGz = currentDy ? currentDy.ganzhi : '';
+
+  // 用神五行对应的生活方式建议
+  const ysLifeMap = {
+    '木': { careerEnv: '多接触教育、培训、创意策划类工作内容', healthOrgans: '肝胆系统', healthActivity: '春季多户外活动、养肝茶饮、早睡早起', healthFoods: '绿色蔬菜、酸味食物', livingEnv: '家中可摆放绿植，多去公园、森林等有生机的地方', colorStyle: '绿色系穿搭可增运' },
+    '火': { careerEnv: '多承担需要表达和展示的工作，主动争取曝光机会', healthOrgans: '心血管系统', healthActivity: '夏季适度运动、注意心脏养护、保持热情但避免过度亢奋', healthFoods: '红色食物、苦味食物', livingEnv: '保持居住环境明亮通风，多晒太阳', colorStyle: '红色/橙色系穿搭可增运' },
+    '土': { careerEnv: '多参与需要稳定执行和项目管理的工作，发挥靠谱特质', healthOrgans: '脾胃消化系统', healthActivity: '规律饮食、避免生冷、饭后散步助消化', healthFoods: '黄色食物、甘味食物', livingEnv: '居住环境保持整洁有序，减少频繁搬迁', colorStyle: '大地色系/棕色系穿搭可增运' },
+    '金': { careerEnv: '多承担需要决断和执行的工作，发挥高效特质', healthOrgans: '肺与呼吸系统', healthActivity: '秋季注意润肺、多做深呼吸和有氧运动', healthFoods: '白色食物、辛味食物', livingEnv: '保持空气清新，减少粉尘和异味刺激', colorStyle: '白色/金色系穿搭可增运' },
+    '水': { careerEnv: '多承担需要沟通协调和策略规划的工作，发挥灵活特质', healthOrgans: '肾脏与泌尿系统', healthActivity: '冬季注意保暖、充足饮水、避免过度劳累和熬夜', healthFoods: '黑色食物、咸味食物（适量）', livingEnv: '居住环境近水为佳，可使用加湿器', colorStyle: '蓝色/黑色系穿搭可增运' }
+  };
+  const ysInfo = ysLifeMap[ys] || ysLifeMap['木'];
+
+  // 忌神五行对应的注意事项
+  const jsCautionMap = {
+    '木': '避免过度扩张和同时开启太多项目，容易精力分散导致每件事都做不精',
+    '火': '避免冲动决策和情绪化行动，容易三分钟热度后放弃，也容易因急躁得罪人',
+    '土': '避免过于保守和拖延不决，容易错失良机，也容易因固执己见而限制发展',
+    '金': '避免过于刚硬和独断，容易与人产生对抗，也容易因追求效率而忽视质量',
+    '水': '避免优柔寡断和朝三暮四，容易错过关键窗口期，也容易因信息过多而无法聚焦'
+  };
+  const jsCaution = jsCautionMap[js] || '';
+
+  // 流年十神对行动的具体指导
+  const lsCareerMap = {
+    '食神': '今年灵感充沛，适合推出新内容/新产品/新服务，把积累的想法变成作品——"做出来"比"想更多"重要',
+    '伤官': '今年创新突破力强，适合做别人没做过的事——但"创新做事，圆融做人"，别让锋芒变成刺',
+    '正财': '今年财运稳健，适合在现有方向上深耕做精——"稳扎稳打"就是最大策略，别贪多',
+    '偏财': '今年财源活跃，适合拓展多个收入渠道——但赚到后要守住，设立强制储蓄，大额支出冷静三天',
+    '正官': '今年有晋升和被认可的机会，但也意味着责任加码——主动承担但别把自己压垮，学会"向上管理"',
+    '七杀': '今年竞争激烈、压力增大，但也是逆势翻盘的最佳时机——"化杀为权"，在挑战中证明自己',
+    '正印': '今年学习运极佳，适合考证、进修、系统学习——"厚积"做好了，后面的"薄发"才有底气',
+    '偏印': '今年领悟力极强，适合钻研小众领域、建立差异化壁垒——但选定1-2个方向深扎，别贪多',
+    '比肩': '今年合作机会增多，适合"抱团发展"——但提前约定好利益分配，避免后期翻脸',
+    '劫财': '今年竞争意识强烈，适合设定PK目标激发潜力——但所有重大决定至少睡一觉再拍板，别冲动'
+  };
+
+  const lsMoneyMap = {
+    '食神': '食神生财——收入增长靠"输出"：内容变现、技能变现、服务变现。副业推出付费内容是最佳路径',
+    '伤官': '伤官生偏财——赚钱点子多、门路活，适合"多条腿走路"。但容易赚多少花多少，务必记账+强制储蓄',
+    '正财': '正财年适合做长期理财规划，稳健投资有望正回报。把已有收入模式优化升级，而非冒险开拓新方向',
+    '偏财': '偏财年财运波动大，有机会赚一笔但也容易"财来财去"。社交是财源，多参加行业聚会和跨界交流',
+    '正官': '财运与职位挂钩，收入增长来自"升职加薪"。把精力放在提升专业能力和职场影响力上',
+    '七杀': '财运波动剧烈，可能有大额支出或意外开销。不建议高风险投资，可在专业领域做"有把握的冒险"',
+    '正印': '把钱花在"投资自己"上——课程、证书、设备、学习资源。短期是支出，长期是最高回报率投资',
+    '偏印': '收入增长来自"独特性"而非"规模"——做别人做不了的、懂别人不懂的。但警惕"想太多做太少"',
+    '比肩': '合作项目中收入需要分润，"一起赚但不会全归你"。合作前明确利益分配，避免"亲兄弟翻脸"',
+    '劫财': '今年最需"守财"——赚到的钱容易被花出去、借出去、投出去。大额支出前冷静三天，不与人合伙投资'
+  };
 
   const acts = [];
 
-  // 事业类（基于主业）
+  // ===== 事业 =====
   if (ui.mainJob) {
-    acts.push({c:'事业',t:'梳理「'+ui.mainJob+'」的发展路径，明确年终目标与关键里程碑'});
-    acts.push({c:'事业',t:'在主业中寻找与用神「'+ys+'」属性结合的机会，提升职场竞争力'});
+    acts.push({c:'事业', t:'「'+ui.mainJob+'」今年重点：' + (lsCareerMap[ls] || '把握流年'+ls+'带来的机遇，顺势而为')});
+    acts.push({c:'事业', t:'在主业中主动争取与「'+ys+'」属性相关的工作内容——' + ysInfo.careerEnv});
   } else {
-    acts.push({c:'事业',t:'明确主业方向，优先发展与用神「'+ys+'」属性相关的领域'});
+    acts.push({c:'事业', t:'明确主业方向，优先进入与用神「'+ys+'」属性匹配的行业——' + ysInfo.careerEnv});
+  }
+  if (dySs) {
+    acts.push({c:'事业', t:'当前'+dyGz+'大运（'+dySs+'运）的整体基调：' + (dySs==='食神'||dySs==='伤官'?'表达与输出为主，越做越有感觉':dySs==='正财'||dySs==='偏财'?'财运为主，积累和拓展并重':dySs==='正官'||dySs==='七杀'?'压力与机遇并存，在挑战中突破':dySs==='正印'||dySs==='偏印'?'学习与沉淀为主，厚积薄发':'合作与竞争并存，找对伙伴很关键') + '，流年'+ls+'是今年的具体节奏'});
   }
 
-  // 副业类（基于副业）
+  // ===== 副业 =====
   if (ui.sideJob) {
-    acts.push({c:'副业',t:'拓展「'+ui.sideJob+'」的客户/市场，制定月度收入增长目标'});
-    acts.push({c:'副业',t:'策划至少2次线下活动或合作，扩大「'+ui.sideJob+'」的影响力'});
+    acts.push({c:'副业', t:'「'+ui.sideJob+'」今年策略：' + (ls==='食神'||ls==='伤官'?'创意输出高峰期，推出新产品/新内容/新服务，用差异化突破':ls==='正财'||ls==='偏财'?'收入增长窗口期，把已有模式升级优化，同时拓展新客源':ls==='正官'||ls==='七杀'?'压力转化期，把主业积累的资源和能力赋能副业，但别两头都焦虑':ls==='正印'||ls==='偏印'?'深耕专业期，提升专业背书和知识壁垒，让客户更信任你':'合作拓展期，找互补型伙伴一起做，1+1>2')});
+    acts.push({c:'副业', t:'副业财务目标：制定月度收入增长计划，副业收入建议60%再投入（学习/设备/推广），40%强制储蓄'});
   } else {
-    acts.push({c:'副业',t:'考虑发展一项与用神「'+ys+'」属性匹配的副业，增加收入来源'});
+    acts.push({c:'副业', t:'考虑发展一项与用神「'+ys+'」属性匹配的副业——' + ysInfo.careerEnv + '，增加收入来源'});
   }
 
-  // 内容/自媒体类（通用建议）
-  acts.push({c:'内容',t:'如有自媒体运营，保持稳定更新节奏，重点突破粉丝增长瓶颈'});
+  // ===== 财务 =====
+  acts.push({c:'财务', t:'今年理财策略：' + (lsMoneyMap[ls] || '合理规划收支，稳健为主')});
+  acts.push({c:'财务', t:'用神「'+ys+'」的财务暗示：' + (ys==='木'?'收入增长靠"生长型投资"——学新技能、拓展新领域，比存钱更增值':ys==='火'?'收入增长靠"展示型投资"——让更多人看到你的价值，曝光=变现':ys==='土'?'收入增长靠"积累型投资"——长期持有、复利增长，别追短期热点':ys==='金'?'收入增长靠"效率型投资"——优化流程、提升单位时间产出，用更少时间赚更多':ys==='水'?'收入增长靠"流动型投资"——多渠道分散、灵活配置，别把鸡蛋放一个篮子':'')});
 
-  // 学习类（基于兴趣方向）
+  // ===== 兴趣/学习 =====
   if (ui.interests) {
-    acts.push({c:'学习',t:'深入「'+ui.interests+'」的学习路径，每周至少投入3小时系统性学习'});
+    acts.push({c:'学习', t:'「'+ui.interests+'」今年学习重点：' + (ls==='正印'||ls==='偏印'?'学习运极佳，适合系统深造、考证或跟师学习，这是"厚积"的好年份':ls==='食神'||ls==='伤官'?'学完要输出——把学到的做成内容/课程/笔记分享，"教是最好的学"':ls==='比肩'||ls==='劫财'?'适合组队学习或参加社群，和同好一起效率更高':'保持每周3小时系统性学习节奏，日积月累就是壁垒')});
   } else {
-    acts.push({c:'学习',t:'围绕用神「'+ys+'」属性方向制定学习计划，每周至少投入3小时'});
+    acts.push({c:'学习', t:'围绕用神「'+ys+'」属性制定学习计划——' + (ys==='木'?'教育、策划、创意类知识':ys==='火'?'演讲、营销、新媒体类知识':ys==='土'?'管理、财务、项目执行类知识':ys==='金'?'技术、法律、标准化类知识':ys==='水'?'沟通、心理学、策略规划类知识':'') + '，每周至少3小时'});
   }
 
-  // 通用建议
-  acts.push({c:'健康',t:'注意用神「'+ys+'」属性的身体调理，保持规律作息和适度运动'});
-  acts.push({c:'人际',t:'2026年流年走'+ls+'，注意人际关系维护，避免口舌之争'});
-  acts.push({c:'财务',t:'制定2026年储蓄目标，副业/额外收入建议60%再投入（学习/设备/推广）'});
+  // ===== 健康 =====
+  acts.push({c:'健康', t:'用神「'+ys+'」对应「'+ysInfo.healthOrgans+'」，今年重点养护：' + ysInfo.healthActivity});
+  acts.push({c:'健康', t:'饮食调理：适当增加' + ysInfo.healthFoods + '；' + (jsCaution ? '忌神「'+js+'」方面：' + jsCautionMap[js] + '——身体层面也要注意避免过度消耗' : '')});
+  acts.push({c:'健康', t:'生活环境增运：' + ysInfo.livingEnv + '；' + ysInfo.colorStyle});
 
-  // 根据婚恋状态增加行动项
+  // ===== 婚恋 =====
+  const targetLabel = ori==='男'?'男性':ori==='女'?'女性':'伴侣';
   if (ms === '单身') {
-    acts.push({c:'婚恋',t:'主动拓展社交圈，多参加兴趣社群或线下活动，增加遇到合适'+(ori==='男'?'男性':ori==='女'?'女性':'伴侣')+'的机会'});
-    acts.push({c:'婚恋',t:'关注2026-2028年的感情窗口期，遇到心动对象时勇敢迈出第一步'});
+    acts.push({c:'婚恋', t:'今年'+ls+'运，' + (ls==='食神'||ls==='伤官'?'个人魅力突出，表达力强，容易吸引异性——多社交、多展示，让别人看到你的光':ls==='正财'||ls==='偏财'?'感情运势较好，有望遇到心仪对象——社交场合多留意，缘分可能出现在意想不到的地方':ls==='正官'||ls==='七杀'?'感情上有"被注意"的机会，但也要主动——别等对方来找你':ls==='正印'||ls==='偏印'?'可能通过学习/工作/长辈介绍遇到合适的人——多参加小范围深度交流的活动':'社交圈活跃，多认识人，但要注意筛选——不是每个桃花都值得回应')});
+    acts.push({c:'婚恋', t:'主动拓展社交圈，多参加兴趣社群或线下活动，增加遇到合适'+targetLabel+'的机会'});
   } else if (ms === '恋爱中') {
-    acts.push({c:'婚恋',t:'与伴侣深入沟通未来规划，明确双方对婚姻的期待和时间表'});
-    acts.push({c:'婚恋',t:'安排高质量的约会时间，在忙碌的工作中保持感情温度'});
+    acts.push({c:'婚恋', t:'今年'+ls+'运，' + (ls==='正官'||ls==='七杀'||ls==='正财'||ls==='偏财'?'感情关键年，适合推进关系或做重要决定——确定关系、见家长、谈婚论嫁':ls==='食神'||ls==='伤官'?'表达欲强，注意沟通方式——"说对的话"比"说得多"更重要':ls==='比肩'||ls==='劫财'?'注意感情中的外部干扰或竞争——多给伴侣安全感，别让第三者有空间':'感情相对平稳，重在经营和深度沟通')});
+    acts.push({c:'婚恋', t:'安排高质量的约会时间，在忙碌中保持感情温度——每周至少一次不受打扰的二人时光'});
   } else if (ms === '已婚') {
-    acts.push({c:'婚恋',t:'与伴侣共同制定年度家庭计划，保持定期深度沟通'});
-    acts.push({c:'婚恋',t:'关注配偶的情绪需求，在事业和副业繁忙中留出二人世界时间'});
+    acts.push({c:'婚恋', t:'今年'+ls+'运，' + (ls==='比肩'||ls==='劫财'?'注意婚姻中的外部干扰——加强沟通，别让猜疑侵蚀信任':ls==='食神'||ls==='伤官'?'注意情绪管理，避免因表达不当伤害对方——"话到嘴边留三分"':ls==='正财'||ls==='偏财'?'夫妻共同理财，财运较好——一起做财务规划，增强共同目标感':ls==='正印'||ls==='偏印'?'家庭温馨，适合添丁或家庭建设——把精力分一些给家庭':'日常经营为主，保持定期深度沟通')});
+    acts.push({c:'婚恋', t:'与伴侣共同制定年度家庭计划，在事业和副业繁忙中留出二人世界时间'});
   } else if (ms === '离异') {
-    acts.push({c:'婚恋',t:'给自己充分的疗愈时间，先完成自我成长再考虑新关系'});
-    acts.push({c:'婚恋',t:'反思上一段关系的模式，避免重复同样的感情困局'});
+    acts.push({c:'婚恋', t:'给自己充分的疗愈时间，先完成自我成长再考虑新关系——今年'+ls+'运，' + (ls==='正印'||ls==='偏印'?'适合沉淀和自我探索，通过学习新事物来重建自信':ls==='食神'||ls==='伤官'?'适合通过表达和创作来释放情绪——写作、画画、做内容都是好的出口':'保持开放心态，但不急于进入新关系')});
   }
+
+  // ===== 人际 =====
+  acts.push({c:'人际', t:'今年流年'+ls+'，人际策略：' + (ls==='食神'||ls==='伤官'?'表达力强、容易结交新朋友——多社交、多分享，但注意别口无遮拦':ls==='比肩'||ls==='劫财'?'社交活跃但竞争也多——交朋友要分清"合作型"和"竞争型"，保持警惕':ls==='正财'||ls==='偏财'?'人脉即财脉——多参加行业活动、跨界交流，贵人可能藏在陌生圈层':ls==='正官'||ls==='七杀'?'注意与上级/权威的关系——尊重规则但不卑不亢，别硬碰硬也别一味退让':ls==='正印'||ls==='偏印'?'贵人运佳，多向长辈/老师/前辈请教，会得到意想不到的帮助':'顺其自然，维护好现有关系即可')});
+  acts.push({c:'人际', t:'用神「'+ys+'」人脉提示：多亲近'+ys+'行属性重的人（'+(ys==='木'?'教育、培训、创意行业':ys==='火'?'传媒、营销、表演行业':ys==='土'?'地产、管理、服务行业':ys==='金'?'金融、法律、技术行业':ys==='水'?'咨询、传媒、物流行业':'')+'），他们会给你带来"顺流感"'});
 
   let h = '<div class="action-list">';
   acts.forEach((a,i) => { h+='<div class="action-item"><div class="action-check" onclick="toggleCheck(this,'+i+')" id="check-'+i+'"></div><div class="action-text" id="text-'+i+'">'+a.t+'</div><div class="action-category">'+a.c+'</div></div>'; });
-  h += '</div><p style="margin-top:16px;font-size:13px;color:var(--text-muted);">2026年流年：'+ln2026.gan+ln2026.zhi+'（'+ls+'），整体'+(ls==='正财'||ls==='偏财'?'财运不错，适合拓展收入':ls==='食神'||ls==='伤官'?'创意表达力强，适合内容输出':'平稳发展，重在积累')+'。当前婚恋状态：'+ms+(ori?'，偏好：'+ori:'')+'。点击勾选可标记完成。</p>';
+  h += '</div><p style="margin-top:16px;font-size:13px;color:var(--text-muted);">'+cy+'年流年：'+ln.gan+ln.zhi+'（'+ls+'）'+(dySs?' | 大运：'+dyGz+'（'+dySs+'运）':'')+' | 用神：'+ys+' | 忌神：'+js+'。点击勾选可标记完成。</p>';
   return h;
 }
 
