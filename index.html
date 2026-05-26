@@ -786,7 +786,7 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
     document.getElementById('slot-persona').outerHTML = '<div class="section fade-in"><div class="section-title">个人属性概括</div><div class="analysis-block">' + genPersonaProfile(bazi, wuxingPower, analysis, ui) + '</div></div>';
     document.getElementById('slot-basic').outerHTML = '<div class="section fade-in"><div class="section-title">八字基本分析</div><div class="analysis-block">' + genBasicAnalysis(bazi, wuxingPower, analysis, ui) + '</div></div>';
     requestAnimationFrame(() => {
-      document.querySelectorAll('#slot-persona, #slot-basic, .section.fade-in:not(.visible)').forEach(el => el.classList.add('visible'));
+      document.querySelectorAll('.section.fade-in:not(.visible)').forEach(el => el.classList.add('visible'));
     });
   };
   const batch2 = function() {
@@ -801,13 +801,13 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
     requestAnimationFrame(() => { document.querySelectorAll('.section.fade-in:not(.visible)').forEach(el => el.classList.add('visible')); });
   };
   const batch3 = function() {
-    document.getElementById('slot-marriage').outerHTML = '<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui) + '</div></div>';
+    document.getElementById('slot-marriage').outerHTML = '<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui, analysis) + '</div></div>';
     document.getElementById('slot-action').outerHTML = '<div class="section fade-in"><div class="section-title">2026年行动清单</div><div class="analysis-block">' + genAction2026(bazi, dayunResult, ui, analysis) + '</div></div>';
     requestAnimationFrame(() => { document.querySelectorAll('.section.fade-in:not(.visible)').forEach(el => el.classList.add('visible')); });
   };
-  setTimeout(batch1, 10);
-  setTimeout(batch2, 30);
-  setTimeout(batch3, 50);
+  setTimeout(batch1, 50);
+  setTimeout(batch2, 100);
+  setTimeout(batch3, 150);
 }
 
 function renderPillar(label, pillar, dayGanIdx) {
@@ -1475,7 +1475,7 @@ function genCareerPlan(bazi, dr, ui) {
   return h;
 }
 
-function genMarriage(bazi, dr, ui) {
+function genMarriage(bazi, dr, ui, an) {
   const dz = bazi.day.zhi, dzc = CANG_GAN[dz]||[];
   const dzw = dzc.length>0 ? GAN_WUXING[TIAN_GAN.indexOf(dzc[0].g)] : '土';
   const ms = ui.marriageStatus || '单身';
