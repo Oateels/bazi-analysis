@@ -730,7 +730,7 @@ function renderResults(bazi, wuxingPower, analysis, dayunResult, ui) {
     '</div></div>' +
     '<div class="section fade-in"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' +
     WUXING_LIST.map((wx,i) => '<div class="wuxing-bar-item"><div class="wuxing-bar-label" style="color:'+WUXING_COLORS[i]+'">'+wx+' '+wuxingPower[i].toFixed(1)+'</div><div class="wuxing-bar-track"><div class="wuxing-bar-fill" style="width:'+pcts[i]+'%;background:'+WUXING_COLORS[i]+'"></div></div></div>').join('') +
-    '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '。日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong> | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong></p></div></div>' +
+    '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '，日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong>（' + getWuxingDesc(analysis.yongShen) + '） | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong>（' + getWuxingDesc(analysis.jiShen) + '）<br><span style="font-size:12px;color:var(--text-muted);">💡 用神是你命局最需要的能量方向，忌神是容易过量的方向——下方"八字基本分析"板块有详细解读</span></p></div></div>' +
     '<div class="section fade-in"><div class="section-title">大运走势</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">起运年龄：约' + Math.round(dayunResult.yearsToFirst) + '岁（' + (ui.year + Math.round(dayunResult.yearsToFirst)) + '年）' + (dayunResult.forward ? '顺排' : '逆排') + '</div><div class="dayun-timeline"><div class="dayun-track">' +
     dayunResult.dayun.map(dy => { const cy = new Date().getFullYear(); const ca = cy - ui.year; const ic = ca >= dy.ageStart && ca <= dy.ageEnd; return '<div class="dayun-item '+(ic?'is-current':'')+'"><div class="dayun-ganzhi">'+dy.ganzhi+'</div><div class="dayun-age">'+dy.ageStart+'-'+dy.ageEnd+'岁</div><div class="dayun-year" style="font-size:11px;color:var(--text-muted);">'+(ui.year+dy.ageStart)+'-'+(ui.year+dy.ageEnd)+'</div><div class="dayun-shishen">'+dy.shishen+'</div>'+(ic?'<div style="font-size:10px;color:var(--accent);margin-top:2px;">★当前</div>':'')+'</div>'; }).join('') +
     '</div></div></div>' +
@@ -773,13 +773,103 @@ function genBasicAnalysis(bazi, wp, an, ui) {
   const dg = bazi.day.gan, dw = GAN_WUXING[bazi.day.ganIdx];
   const mxi = wp.indexOf(Math.max(...wp)), mni = wp.indexOf(Math.min(...wp));
   const mw = WUXING_LIST[mxi], nw = WUXING_LIST[mni];
-  let pat = '正格';
-  if (mw==='金'&&wp[mxi]>wp[WUXING_LIST.indexOf('土')]*1.5) pat='从革格倾向';
-  else if (mw==='木') pat='曲直格倾向'; else if (mw==='水') pat='润下格倾向';
-  else if (mw==='火') pat='炎上格倾向'; else if (mw==='土') pat='稼穑格倾向';
   const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
   const hs = getShishen(bazi.day.ganIdx, bazi.hour.ganIdx);
-  return '<h3>命局总览</h3><p>日主 <strong>'+dg+'</strong>（'+dw+'），生于'+bazi.month.zhi+'月（'+bazi.month.gan+bazi.month.zhi+'），'+an.analysis+'。</p><p>格局类型：<strong>'+pat+'</strong>。月令透出 <strong>'+ms+'</strong>，时柱透出 <strong>'+hs+'</strong>。</p><p>五行最强：<strong>'+mw+'</strong>（'+wp[mxi].toFixed(1)+'），五行最弱：<strong>'+nw+'</strong>（'+wp[mni].toFixed(1)+'）。</p><h3>性格特点</h3><p>'+getPersonalityDesc(bazi)+'</p><h3>用神与忌神</h3><p>用神为 <strong>'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'），宜多接触'+an.yongShen+'属性的人事物。</p><p>忌神为 <strong>'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'），应适当规避'+an.jiShen+'过旺的环境。</p>';
+
+  // ===== 格局判断与解释 =====
+  let pat = '正格', patDesc = '';
+  const totalPower = wp.reduce((a,b) => a+b, 0);
+  const maxRatio = wp[mxi] / (totalPower || 1);
+  const isSpecialGJ = maxRatio > 0.45; // 某一行占比超45%才考虑特殊格局
+
+  if (isSpecialGJ) {
+    const gejuInfo = {
+      '木': {name:'曲直格', desc:'木气极旺，如大树参天，生机蓬勃。这意味着你天生具有强大的创造力和生长力，适合在需要持续发展、深耕积累的领域发挥。但木太旺则容易固执己见、不知变通，需注意适度收敛，学会倾听不同意见。', warn:'注意不要过度扩张，避免精力分散；适当接触金属性的事物（如规则、纪律）来修剪自己的"枝蔓"。'},
+      '火': {name:'炎上格', desc:'火气极旺，如烈日当空，光芒四射。你天生热情外向，表现力和感染力极强，容易成为人群焦点。但火太旺则急躁冲动，做事容易三分钟热度，需注意培养耐心和持续性。', warn:'注意控制情绪，避免冲动决策；适当接触水属性的事物（如冷静思考、阅读沉淀）来平衡内心的"火气"。'},
+      '土': {name:'稼穑格', desc:'土气极旺，如大地厚重，承载万物。你性格沉稳踏实，责任心强，是值得信赖的人。但土太旺则容易保守固执，做事慢半拍，需注意灵活变通，避免因循守旧。', warn:'注意不要过于保守，适度拥抱变化；适当接触木属性的事物（如学习新技能、接触新领域）来为自己的生活注入"生长力"。'},
+      '金': {name:'从革格', desc:'金气极旺，如利刃出鞘，刚毅果断。你执行力极强，做事雷厉风行，决断力出众。但金太旺则容易过于刚硬，缺乏柔韧，人际关系中可能显得不够圆融。', warn:'注意在人际交往中增加柔软度，学会"以退为进"；适当接触火属性的事物（如热情社交、表达情感）来温暖自己的"锋芒"。'},
+      '水': {name:'润下格', desc:'水气极旺，如江河奔流，智慧灵动。你思维敏捷，善于变通，适应能力极强。但水太旺则容易优柔寡断，缺乏定力，做事容易漂移不定。', warn:'注意培养专注力和坚持力，避免朝三暮四；适当接触土属性的事物（如建立规律作息、制定明确计划）来为自己"筑坝蓄水"。'}
+    };
+    const info = gejuInfo[mw];
+    if (info) { pat = info.name; patDesc = info.desc; }
+  }
+  if (!patDesc) {
+    patDesc = '你的命局五行相对均衡，没有某一行特别突出。这意味着你适应面广，可以在多个领域发展，但也可能缺乏特别鲜明的优势方向。建议通过后天的学习和积累，在用神方向上建立差异化竞争力。';
+  }
+
+  // ===== 月令透出解释 =====
+  const shishenExplain = {
+    '食神': {meaning:'食神是"我生之物"，代表你的才华、表达和创造力。月令透出食神，说明你天生就有把想法变成内容、把技能变成产品的能力——你是那种"越做越有感觉"的人。', advice:'食神是最温和的吉神，意味着你可以通过"输出"来获得成就感和收入。建议多创造、多表达，无论是写作、教学还是内容制作，都是你的主场。注意不要懒散——食神的人容易满足于"还不错"而错失更大的机会。'},
+    '伤官': {meaning:'伤官是"我生之物"的偏锋，代表你才华横溢但个性鲜明，思维不受常规束缚。月令透出伤官，说明你天生有打破常规的能力，能看到别人看不到的角度。', advice:'伤官的人适合创新、突破、做别人没做过的事。但伤官也容易"过于锋利"——说话直、不服管、与权威冲突。建议学会"才华外圆内方"，用创新的方式做事，但用圆融的方式沟通。伤官见财则富，把创意落地为产品/服务是最佳路径。'},
+    '正财': {meaning:'正财是"我克之物"，代表稳定的收入、务实的资源和踏实的财富。月令透出正财，说明你这辈子的财富来源偏向稳健——靠实力、靠积累、靠长期耕耘。', advice:'正财的人不适合投机冒险，而是适合在稳定的工作或生意中持续积累。你的财富密码是"稳扎稳打"——选对方向后坚持下去，时间会给你最好的回报。注意不要过于保守，偶尔也需要抓住机遇。'},
+    '偏财': {meaning:'偏财是"我克之物"的偏门，代表灵活的财源、社交中的机遇和意想不到的收入。月令透出偏财，说明你财运活跃，赚钱的门路多，社交中容易遇到贵人带来财运。', advice:'偏财的人适合做"多线并行"的收入结构——主业+副业+投资，不要把鸡蛋放在一个篮子里。但偏财也容易"财来财去"，赚到钱后要注意守住，建议建立强制储蓄习惯。社交是你的财源，多参加行业活动、拓展人脉。'},
+    '正官': {meaning:'正官是"克我之物"，代表规范、约束、地位和正当的权力。月令透出正官，说明你这辈子适合在"有规则的体系"中发展——大公司、体制内、有明确晋升通道的环境。', advice:'正官的人最适合"按部就班往上走"的职业路线。你的优势是自律、有责任感、能得到上级的信任。但正官也意味着压力和束缚，需注意不要被规矩压得喘不过气，适时给自己松绑。女命正官为夫星，感情上遇到合适对象的概率较高。'},
+    '七杀': {meaning:'七杀是"克我之物"的偏锋，代表强烈的竞争、压力和危机感，但也代表突破困境的力量。月令透出七杀，说明你这辈子注定不会太平淡——要么在压力中爆发，要么被压力压垮。', advice:'七杀的人需要学会"化杀为权"——把压力转化为动力。适合有挑战性、需要魄力的岗位，不适合太安逸的环境。建议培养一项能让自己"出出汗"的习惯（运动、竞技），释放内在的压力能量。女命七杀为偏夫星，感情上容易遇到强势或有个性的对象，需注意关系中的权力平衡。'},
+    '正印': {meaning:'正印是"生我之物"，代表学习、知识、长辈的庇护和文凭资质。月令透出正印，说明你这辈子靠"脑力"吃饭——学习是你最大的优势，知识是你最硬的底牌。', advice:'正印的人适合深耕专业、考取资质、建立知识壁垒。你的成长路径是"厚积薄发"——前期花时间学习和积累，后期靠专业权威立足。建议持续进修，不要急于求成。正印也代表贵人运，多向长辈、老师请教，会得到意想不到的帮助。'},
+    '偏印': {meaning:'偏印是"生我之物"的偏门，代表独特的领悟力、非主流的知识和直觉式的学习能力。月令透出偏印，说明你学东西不走寻常路——别人按部就班，你可能一看就会，但也容易"会而不精"。', advice:'偏印的人适合钻研小众领域、发展差异化技能。你的优势是"领悟力强，举一反三"，但弱项是"容易浅尝辄止"。建议选定1-2个方向深扎下去，不要贪多。偏印也代表独处时的灵感爆发，给自己留出安静思考的时间很重要。'},
+    '比肩': {meaning:'比肩是"与我同类"，代表同辈、朋友、竞争者和合作伙伴。月令透出比肩，说明你这辈子"同辈缘"很重——身边总有不少和你水平相当的人，既可能成为合作伙伴，也可能成为竞争对手。', advice:'比肩的人适合"抱团发展"——找对伙伴一起做事，效果比单打独斗好得多。但需注意分清"朋友"和"生意伙伴"的界限，合作时提前约定好利益分配。财运上注意不要盲目跟风投资，别人赚的不代表你也能赚。'},
+    '劫财': {meaning:'劫财是"与我同类"的偏锋，代表竞争、争夺和消耗。月令透出劫财，说明你这辈子竞争意识很强，总感觉自己需要"争"才能得到——这种紧迫感既是动力也是压力。', advice:'劫财的人需要注意"守财"——赚到的钱容易因各种原因花出去或被借走。建议养成强制储蓄习惯，大额支出前冷静三天。事业上适合设定明确的竞争目标，在竞争中激发自己的潜力。人际关系中注意分寸，不要因争强好胜伤害关系。'}
+  };
+
+  const msInfo = shishenExplain[ms] || {meaning:'月令透出'+ms+'，对你的命局有重要影响。', advice:'建议根据用神方向来规划发展路径。'};
+  const hsInfo = shishenExplain[hs] || {meaning:'时柱透出'+hs+'，影响你的晚年和内在潜力。', advice:'建议结合整体命局来理解时柱的影响。'};
+
+  // ===== 五行最强/最弱解释 =====
+  const wuxingStrongDesc = {
+    '木':'木旺代表你的创造力和生长力很强，做事有冲劲，但也可能方向太多、精力分散。建议聚焦重点，"修枝剪叶"比"四处生发"更重要。',
+    '火':'火旺代表你的热情和表现力很强，社交中容易出彩，但也可能急躁冲动。建议培养"三思而后行"的习惯，把热情转化为持久的行动力。',
+    '土':'土旺代表你稳重踏实，可靠度很高，但也可能过于保守、行动迟缓。建议适度"冒险"，尝试跳出舒适圈。',
+    '金':'金旺代表你执行力强，决断力出众，但也可能过于刚硬、缺乏弹性。建议在人际交往中增加柔和度。',
+    '水':'水旺代表你聪明灵活，适应能力很强，但也可能优柔寡断、缺乏定力。建议培养专注力，选定方向后坚持到底。'
+  };
+  const wuxingWeakDesc = {
+    '木':'木弱说明你的创造力和学习动力可能不足，容易陷入"做一天和尚撞一天钟"的状态。建议主动接触新事物、新知识，多和有活力的人在一起。',
+    '火':'火弱说明你的热情和表现欲可能不够，容易被人忽视或自己错失展示的机会。建议主动表达、积极社交，不要总是"等别人来发现你"。',
+    '土':'土弱说明你可能不够踏实或缺乏稳定性，容易频繁变动或做事缺乏耐心。建议建立规律的作息和工作习惯，培养"坚持"的能力。',
+    '金':'金弱说明你的执行力和决断力可能不足，容易犹豫不决或做事拖沓。建议给自己设定明确的deadline，培养"说到做到"的习惯。',
+    '水':'水弱说明你的灵活性和沟通能力可能不足，容易钻牛角尖或与人沟通不畅。建议多阅读、多交流，培养换位思考的能力。'
+  };
+
+  // ===== 组装输出 =====
+  let h = '';
+  // 命局总览
+  h += '<h3>命局总览</h3>';
+  h += '<p>日主 <strong>'+dg+'</strong>（'+dw+'），生于'+bazi.month.zhi+'月（'+bazi.month.gan+bazi.month.zhi+'），'+an.analysis+'。</p>';
+  h += '<p>用神：<strong style="color:var(--gold)">'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'） | 忌神：<strong style="color:#F44336">'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'）</p>';
+
+  // 格局类型
+  h += '<h3>格局类型：'+pat+'</h3>';
+  h += '<p>'+patDesc+'</p>';
+
+  // 月令透出
+  h += '<h3>月令透出：'+ms+'</h3>';
+  h += '<p>'+msInfo.meaning+'</p>';
+  h += '<p style="color:var(--text-secondary);font-size:13px;border-left:3px solid var(--accent);padding-left:10px;margin-top:8px;">💡 '+msInfo.advice+'</p>';
+
+  // 时柱透出
+  h += '<h3>时柱透出：'+hs+'</h3>';
+  h += '<p>'+hsInfo.meaning+'</p>';
+  h += '<p style="color:var(--text-secondary);font-size:13px;border-left:3px solid var(--accent);padding-left:10px;margin-top:8px;">💡 '+hsInfo.advice+'</p>';
+
+  // 五行最强
+  h += '<h3>五行最强：'+mw+'（力量 '+wp[mxi].toFixed(1)+'）</h3>';
+  h += '<p>'+(wuxingStrongDesc[mw]||'')+'</p>';
+
+  // 五行最弱
+  h += '<h3>五行最弱：'+nw+'（力量 '+wp[mni].toFixed(1)+'）</h3>';
+  h += '<p>'+(wuxingWeakDesc[nw]||'')+'</p>';
+  h += '<p style="font-size:13px;color:var(--text-muted);">💡 五行最弱的方向也是你最容易突破的方向——通过有意识地补强'+nw+'属性，可以显著改善命局平衡。</p>';
+
+  // 性格特点
+  h += '<h3>性格特点</h3>';
+  h += '<p>'+getPersonalityDesc(bazi)+'</p>';
+
+  // 用神与忌神
+  h += '<h3>用神与忌神详解</h3>';
+  h += '<p>用神为 <strong style="color:var(--gold)">'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'），是你命局中"最需要的能量"。宜多接触'+an.yongShen+'属性的人事物——包括行业方向、居住环境、合作关系等。</p>';
+  h += '<p>忌神为 <strong style="color:#F44336">'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'），是你命局中"容易过量的能量"。应适当规避'+an.jiShen+'过旺的环境和决策——但不是完全避免，而是控制比例。</p>';
+
+  return h;
 }
 
 function genIndustry(bazi, an, ui) {
