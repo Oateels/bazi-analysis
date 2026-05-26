@@ -728,6 +728,7 @@ function renderResults(bazi, wuxingPower, analysis, dayunResult, ui) {
     '<div class="section fade-in"><div class="section-title">八字排盘</div><div class="bazi-chart">' +
     renderPillar('年柱', bazi.year, bazi.day.ganIdx) + renderPillar('月柱', bazi.month, bazi.day.ganIdx) + renderPillar('日柱', bazi.day, bazi.day.ganIdx) + renderPillar('时柱', bazi.hour, bazi.day.ganIdx) +
     '</div></div>' +
+    '<div class="section fade-in"><div class="section-title">个人属性概括</div><div class="analysis-block">' + genPersonaProfile(bazi, wuxingPower, analysis, ui) + '</div></div>' +
     '<div class="section fade-in"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' +
     WUXING_LIST.map((wx,i) => '<div class="wuxing-bar-item"><div class="wuxing-bar-label" style="color:'+WUXING_COLORS[i]+'">'+wx+' '+wuxingPower[i].toFixed(1)+'</div><div class="wuxing-bar-track"><div class="wuxing-bar-fill" style="width:'+pcts[i]+'%;background:'+WUXING_COLORS[i]+'"></div></div></div>').join('') +
     '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '，日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong>（' + getWuxingDesc(analysis.yongShen) + '） | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong>（' + getWuxingDesc(analysis.jiShen) + '）<br><span style="font-size:12px;color:var(--text-muted);">💡 用神是你命局最需要的能量方向，忌神是容易过量的方向——下方"八字基本分析"板块有详细解读</span></p></div></div>' +
@@ -767,6 +768,188 @@ function getPersonalityDesc(bazi) {
   if (ms==='正官'||ms==='七杀') d+='月令透官杀，有责任心，适合管理、组织类工作，但压力也较大。';
   if (ms==='正印'||ms==='偏印') d+='月令透印星，学习能力强，适合学术、研究、幕后支持类工作。';
   return d;
+}
+
+// ========== 个人属性概括 ==========
+function genPersonaProfile(bazi, wp, an, ui) {
+  const dg = bazi.day.gan; // 日干
+  const dw = GAN_WUXING[bazi.day.ganIdx]; // 日干五行
+  const gender = ui.gender || '';
+  const genderLabel = gender === '女' ? '女' : gender === '男' ? '男' : '';
+  const label = dg + dw + genderLabel; // 如"乙木女"
+
+  // ===== 十天干性格详解 =====
+  const ganPersonality = {
+    '甲': {
+      nature: '甲木为参天大树，你是天生的领导者型人格。',
+      strengths: '正直坚毅，有担当，做事有条理，能在逆境中扎根成长。骨子里有一股不服输的劲头，给人可靠的感觉。',
+      weaknesses: '有时候过于固执，不撞南墙不回头。自尊心强，不太愿意示弱或求人帮忙。',
+      growth: '学会"弯曲"——大树也要随风摆才能不被折断。适时妥协不是软弱，而是智慧。多培养倾听的能力，不必事事争第一。'
+    },
+    '乙': {
+      nature: '乙木为花草藤蔓，你是天生的柔韧型人格。',
+      strengths: '灵活变通，善于借力使力，适应能力极强。你像藤蔓一样，能找到最适合自己的生长路径。心思细腻，善解人意，人缘通常不错。',
+      weaknesses: '有时候优柔寡断，容易受他人意见左右。内心敏感，容易因为小事受伤。依赖性较强，不太喜欢单打独斗。',
+      growth: '培养独立决策的能力——不是每个藤蔓都需要攀附大树，你也可以自己长成一片花海。学会说"不"，不必事事迁就他人。'
+    },
+    '丙': {
+      nature: '丙火为太阳之火，你是天生的光芒型人格。',
+      strengths: '热情大方，感染力极强，走到哪里都能照亮一片。你天生自带聚光灯效果，容易成为人群中的焦点。胸怀宽广，不记仇。',
+      weaknesses: '有时候过于自我中心，忽略他人感受。做事容易三分钟热度，轰轰烈烈开始却难以坚持。心直口快，可能无意间伤害别人。',
+      growth: '学会"收光"——不是每时每刻都需要闪耀，有时候安静倾听比表达更有力量。培养专注力，把热情转化为持久的行动。'
+    },
+    '丁': {
+      nature: '丁火为烛光星火，你是天生的洞察型人格。',
+      strengths: '内心温暖但外表含蓄，观察力和洞察力极强。你能看到别人看不到的细节，适合需要精微判断的工作。感情细腻，内心世界丰富。',
+      weaknesses: '有时候想太多，容易陷入内耗。表面温和，内心可能很执着。不擅长拒绝，容易把压力积压在心里。',
+      growth: '学会"释放"——不要把所有情绪都闷在心里，适度表达反而更健康。相信自己的直觉，但也要用行动去验证。'
+    },
+    '戊': {
+      nature: '戊土为高山大地，你是天生的稳固型人格。',
+      strengths: '厚重踏实，责任心极强，是别人最可靠的靠山。你做事靠谱，承诺的事情一定会完成。包容力强，能承受很大的压力。',
+      weaknesses: '有时候反应慢半拍，给人"迟钝"的感觉。过于保守，可能错过好时机。不太擅长表达情感，显得冷淡。',
+      growth: '学会"松动"——大地也需要翻耕才能长出新芽。适度拥抱变化，尝试新事物。培养表达能力，让别人看到你内心的温度。'
+    },
+    '己': {
+      nature: '己土为田园沃土，你是天生的滋养型人格。',
+      strengths: '温和包容，善于照顾他人，是朋友圈里的"暖宝宝"。你做事细致，有耐心，能把事情做得很精致。人际关系处理得当。',
+      weaknesses: '有时候过于迁就他人，忽略自己的需求。容易犹豫不决，缺乏魄力。可能因为太在意别人的看法而压抑自己。',
+      growth: '学会"拒绝"——照顾别人的同时也要照顾自己。你的价值不需要通过付出来证明。培养果断决策的能力，不必事事征求他人意见。'
+    },
+    '庚': {
+      nature: '庚金为刀剑利斧，你是天生的战将型人格。',
+      strengths: '刚毅果断，执行力极强，雷厉风行。你有魄力做别人不敢做的决定，在关键时刻能扛住压力。讲义气，重承诺。',
+      weaknesses: '有时候过于强硬，不够圆融。脾气急躁，容易与人发生冲突。不太擅长表达柔软的一面，可能让人觉得"冷"。',
+      growth: '学会"藏锋"——利刃也需要刀鞘。在人际交往中增加柔软度，"以柔克刚"比硬碰硬更有效。培养耐心，不是所有事情都需要一击即中。'
+    },
+    '辛': {
+      nature: '辛金为珠玉首饰，你是天生的精致型人格。',
+      strengths: '品味出众，审美力强，追求完美。你有把普通事物做到精致的能力，注重细节和品质。外表优雅，内心有原则。',
+      weaknesses: '有时候过于追求完美，导致拖延或过度消耗。心思敏感，容易因为批评受伤。可能给人"高冷"或"挑剔"的印象。',
+      growth: '学会"完成大于完美"——先把事情做到80分，再逐步打磨。接受不完美是成长的一部分。适度展示真实的一面，不必时刻保持精致。'
+    },
+    '壬': {
+      nature: '壬水为大海江河，你是天生的智慧型人格。',
+      strengths: '思维开阔，格局大，善于从全局看问题。你适应能力极强，到任何环境都能找到生存之道。学习能力强，举一反三。',
+      weaknesses: '有时候过于随性，缺乏定力和纪律。做事容易"漂"，不够专注。可能给人"不靠谱"的感觉——因为你太灵活，别人摸不透你。',
+      growth: '学会"聚焦"——海再大也需要岸。选定1-2个方向深入扎下去，比什么都懂一点更有竞争力。建立规律的生活和工作节奏。'
+    },
+    '癸': {
+      nature: '癸水为雨露细流，你是天生的灵慧型人格。',
+      strengths: '心思敏锐，直觉力强，能捕捉到微小的变化和信息。你学习能力惊人，特别是自学能力——别人需要手把手教的东西，你可能自己琢磨就会了。内心安静但有力量。',
+      weaknesses: '有时候过于敏感，容易内耗。不善社交或不愿社交，可能错失人脉机会。想法很多但行动偏少，容易"想了一百步，一步都没走"。',
+      growth: '学会"行动"——想得再多不如做一步。给自己设定最小行动目标，每天往前走一点点。适度社交，你不需要变成社交达人，但1-2个深度关系对你很重要。'
+    }
+  };
+
+  // ===== 五行相合与相冲 =====
+  // 天干五合
+  const tianGanHe = {'甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊'};
+  // 地支六合
+  const diZhiLiuHe = {'子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午'};
+  // 地支三合
+  const diZhiSanHe = {'申':'["申子辰"]','子':'["申子辰"]','辰':'["申子辰"]','亥':'["亥卯未"]','卯':'["亥卯未"]','未':'["亥卯未"]','寅':'["寅午戌"]','午':'["寅午戌"]','戌':'["寅午戌"]','巳':'["巳酉丑"]','酉':'["巳酉丑"]','丑':'["巳酉丑"]'};
+  // 六冲
+  const diZhiLiuChong = {'子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳'};
+
+  // 日支（夫妻宫）
+  const dz = bazi.day.zhi;
+
+  // 用神五行相生关系
+  const wxSheng = {'木':'水','火':'木','土':'火','金':'土','水':'金'}; // 生我者
+  const wxKe = {'木':'金','火':'水','土':'木','金':'火','水':'土'}; // 克我者
+
+  // 相合的五行属性（用神+生用神）
+  const harmonizeWx = [an.yongShen, wxSheng[an.yongShen]];
+  // 相冲的五行属性（忌神+克用神）
+  const conflictWx = [an.jiShen, wxKe[an.yongShen]];
+
+  // 五行对应天干
+  const wxToGan = {'木':['甲','乙'],'火':['丙','丁'],'土':['戊','己'],'金':['庚','辛'],'水':['壬','癸']};
+
+  // ===== 天干合 =====
+  const heGan = tianGanHe[dg];
+  const heGanWx = heGan ? GAN_WUXING[TIAN_GAN.indexOf(heGan)] : '';
+
+  // ===== 组装输出 =====
+  const pInfo = ganPersonality[dg] || ganPersonality['甲'];
+
+  let h = '';
+
+  // 标签区
+  h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">';
+  h += '<div style="font-size:28px;font-weight:700;color:var(--gold);">'+dg+'</div>';
+  h += '<div><div style="font-size:22px;font-weight:700;color:var(--text-primary);">'+label+'</div>';
+  h += '<div style="font-size:13px;color:var(--text-muted);margin-top:2px;">'+dw+'行日主 · '+pInfo.nature+'</div></div>';
+  h += '</div>';
+
+  // 性格分析
+  h += '<h3>性格优势</h3><p>'+pInfo.strengths+'</p>';
+  h += '<h3>性格盲区</h3><p>'+pInfo.weaknesses+'</p>';
+  h += '<h3>成长建议</h3><p style="border-left:3px solid var(--gold);padding-left:10px;">'+pInfo.growth+'</p>';
+
+  // 发展注意事项
+  h += '<h3>发展注意事项</h3>';
+  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+  const warnings = [];
+  if (an.dayeStrong) {
+    warnings.push('日主偏强，容易"太把自己当回事"——在做重大决策时，多听听不同意见，避免独断专行。');
+  } else {
+    warnings.push('日主偏弱，容易"太不把自己当回事"——在需要争取的时候要敢于站出来，你的意见同样重要。');
+  }
+  if (ms === '伤官' || ms === '七杀') {
+    warnings.push('月令透出'+ms+'，性格中有比较强的叛逆和锋芒——这是你的武器，但需要学会"择时出鞘"，不是每个场合都需要亮剑。');
+  }
+  if (ms === '正印' || ms === '偏印') {
+    warnings.push('月令透出'+ms+'，容易陷入"学而不做"的陷阱——知识积累到一定程度后，一定要落地实践，否则只是纸上谈兵。');
+  }
+  if (ms === '比肩' || ms === '劫财') {
+    warnings.push('月令透出'+ms+'，人际关系中竞争意识强——合作时提前约定好规则，避免"亲兄弟明算账"变成"亲兄弟翻脸"。');
+  }
+  warnings.push('用神为'+an.yongShen+'，多接触'+an.yongShen+'属性的环境、行业、人脉，会明显感觉"顺流"。远离'+an.jiShen+'属性过重的环境，会让你"逆流"。');
+  h += '<ul>' + warnings.map(w => '<li style="margin-bottom:8px;line-height:1.7;">'+w+'</li>').join('') + '</ul>';
+
+  // 相合分析
+  h += '<h3>人际相合</h3>';
+
+  // 天干五合
+  if (heGan) {
+    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:var(--gold);font-size:14px;">✦ 天干五合：'+dg+'合'+heGan+'</div>';
+    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">你与日干为<strong>「'+heGan+'」</strong>（'+heGanWx+'行）的人天然相合，容易产生默契和信任感。这种合在亲密关系中尤为明显——遇到'+heGan+'日主的人，你会觉得"很对味"。</p></div>';
+  }
+
+  // 五行相合
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:var(--gold);font-size:14px;">✦ 五行相合属性</div>';
+  harmonizeWx.forEach(wx => {
+    const gans = wxToGan[wx] || [];
+    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;"><strong style="color:var(--accent);">'+wx+'行</strong>（'+gans.join('、')+'日主）的人与你命局相合，相处起来舒服顺畅，合作容易出成果。'+(wx===an.yongShen?'这是你的用神属性，多亲近'+wx+'行的人对你有直接的补益作用。':'生你用神的属性，与'+wx+'行的人在一起会间接滋养你的命局。')+'</p>';
+  });
+  h += '</div>';
+
+  // 五行相冲
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#F44336;font-size:14px;">✦ 需要留意的属性</div>';
+  conflictWx.forEach(wx => {
+    const gans = wxToGan[wx] || [];
+    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;"><strong style="color:#F44336;">'+wx+'行</strong>（'+gans.join('、')+'日主）的人与你命局有冲，相处中容易产生摩擦或内耗。'+(wx===an.jiShen?'这是你的忌神属性，长期与'+wx+'行过重的人密切接触可能让你疲惫。':'克制你用神的属性，过多接触可能削弱你的"顺流感"。')+'不是说要完全避开，而是注意保持适当距离和界限。</p>';
+  });
+  h += '</div>';
+
+  // 地支六冲（夫妻宫）
+  if (diZhiLiuChong[dz]) {
+    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#FF9800;font-size:14px;">✦ 夫妻宫提醒</div>';
+    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">你的日支（夫妻宫）为「'+dz+'」，与「'+diZhiLiuChong[dz]+'」相冲。这意味着你在亲密关系中可能经历较多波动——不是不好，而是需要更多的沟通和磨合。选择伴侣时，如果对方八字中「'+diZhiLiuChong[dz]+'」属性很重，关系中的挑战会更多，但也可以通过相互理解来化解。</p></div>';
+  }
+
+  // 地支六合（夫妻宫）
+  if (diZhiLiuHe[dz]) {
+    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#4CAF50;font-size:14px;">✦ 夫妻宫贵合</div>';
+    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">你的日支「'+dz+'」与「'+diZhiLiuHe[dz]+'」六合，这意味着与八字中带「'+diZhiLiuHe[dz]+'」的人容易产生天然的亲近感，亲密关系中相处更和谐。遇到日支为「'+diZhiLiuHe[dz]+'」的人，可以多留意。</p></div>';
+  }
+
+  // 总结
+  h += '<p style="font-size:12px;color:var(--text-muted);margin-top:12px;line-height:1.7;">⚠️ 以上相合/相冲分析基于八字天干地支的生克关系，是传统命理的参考框架，并非绝对。人际关系的质量取决于双方的努力和沟通，命理只是提供了一个"天然的化学反应"参考。</p>';
+
+  return h;
 }
 
 function genBasicAnalysis(bazi, wp, an, ui) {
