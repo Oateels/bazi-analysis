@@ -6,38 +6,43 @@
 <title>小鸟疗愈-八字排盘分析</title>
 <style>
 :root {
-  --bg-primary: #0f0f14;
-  --bg-secondary: #1a1a24;
-  --bg-card: #22222e;
-  --text-primary: #e8e8f0;
-  --text-secondary: #9898a8;
-  --text-muted: #686878;
-  --border: #33334a;
-  --accent: #7b68ee;
-  --accent-soft: rgba(123,104,238,0.15);
-  --gold: #d4a537;
-  --gold-soft: rgba(212,165,55,0.15);
-  --radius: 12px;
-  --radius-sm: 8px;
+  --bg-primary: #fdf0f6;
+  --bg-secondary: #fff5fa;
+  --bg-card: rgba(255,255,255,0.72);
+  --text-primary: #4a2040;
+  --text-secondary: #7a4570;
+  --text-muted: #a07098;
+  --border: rgba(180,130,180,0.25);
+  --accent: #9b6bb5;
+  --accent-soft: rgba(196,113,165,0.1);
+  --gold: #c47d3f;
+  --gold-soft: rgba(196,125,63,0.12);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --pink-light: #fce4ec;
+  --purple-light: #e8d5f5;
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+  background: linear-gradient(135deg, #f8e1ee 0%, #e8d5f5 30%, #d5c6f0 60%, #fce4ec 100%);
+  background-attachment: fixed;
+  color: var(--text-primary); line-height: 1.6;
   min-height: 100vh;
+  position: relative;
 }
 .container { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
 .header { text-align: center; padding: 40px 0 32px; }
-.header h1 { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.header h1 { font-size: 28px; font-weight: 700; background: linear-gradient(135deg, #c471a5, #9b6bb5); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 8px; }
 .header p { color: var(--text-secondary); font-size: 15px; }
 .section { margin-bottom: 40px; }
-.section-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; padding-left: 12px; border-left: 3px solid var(--accent); }
-.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.section-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; padding-left: 12px; border-left: 3px solid #c471a5; }
+.card { background: var(--bg-card); backdrop-filter: blur(10px); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(155,107,181,0.08); }
 .card-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
 .form-group { margin-bottom: 20px; }
 .form-label { display: block; font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
 .form-input, .form-select {
-  width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+  width: 100%; background: rgba(255,255,255,0.8); border: 1px solid var(--border);
   border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text-primary);
   font-size: 15px; font-family: inherit;
 }
@@ -46,21 +51,22 @@ body {
 .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
 .gender-selector { display: flex; gap: 12px; }
 .gender-btn {
-  flex: 1; padding: 10px; text-align: center; background: var(--bg-secondary);
+  flex: 1; padding: 10px; text-align: center; background: rgba(255,255,255,0.7);
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   cursor: pointer; font-size: 15px; color: var(--text-secondary); transition: all 0.2s;
 }
 .gender-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .btn-submit {
-  width: 100%; padding: 14px; background: var(--accent); color: white; border: none;
+  width: 100%; padding: 14px; background: linear-gradient(135deg, #c471a5, #9b6bb5); color: white; border: none;
   border-radius: var(--radius); font-size: 17px; font-weight: 600; cursor: pointer;
-  transition: opacity 0.2s; margin-top: 8px;
+  transition: opacity 0.2s, transform 0.15s; margin-top: 8px;
+  box-shadow: 0 4px 16px rgba(155,107,181,0.3);
 }
 .btn-submit:hover { opacity: 0.9; }
 .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
 .bazi-chart { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
 .bazi-pillar {
-  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius);
+  background: rgba(255,255,255,0.72); backdrop-filter: blur(8px); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 16px 12px; text-align: center; position: relative;
 }
 .bazi-pillar.is-day { border-color: var(--accent); background: var(--accent-soft); }
@@ -72,13 +78,13 @@ body {
 .wuxing-bar-chart { margin-bottom: 20px; }
 .wuxing-bar-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
 .wuxing-bar-label { font-size: 14px; font-weight: 600; min-width: 70px; text-align: right; }
-.wuxing-bar-track { flex: 1; height: 28px; background: var(--bg-primary); border-radius: 6px; overflow: hidden; }
+.wuxing-bar-track { flex: 1; height: 28px; background: rgba(255,255,255,0.5); border-radius: 6px; overflow: hidden; }
 .wuxing-bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 12px; color: #fff; font-weight: 500; }
 .dayun-timeline { position: relative; padding: 20px 0; overflow-x: auto; }
 .dayun-track { display: flex; gap: 0; min-width: 700px; position: relative; }
 .dayun-item {
   flex: 1; min-width: 80px; text-align: center; padding: 12px 4px;
-  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative;
+  background: rgba(255,255,255,0.6); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative;
 }
 .dayun-item.is-current { border-color: var(--accent); background: var(--accent-soft); }
 .dayun-ganzhi { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
@@ -92,12 +98,12 @@ body {
 .tag-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; margin: 4px 4px 4px 0; }
 .tag-gold { background: var(--gold-soft); color: var(--gold); }
 .tag-accent { background: var(--accent-soft); color: var(--accent); }
-.action-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.action-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid rgba(180,130,180,0.15); }
 .action-item:last-child { border-bottom: none; }
 .action-check {
   width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px;
   flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
-  font-size: 14px; color: var(--accent); background: var(--bg-secondary);
+  font-size: 14px; color: var(--accent); background: rgba(255,255,255,0.7);
 }
 .action-check.checked { background: var(--accent); border-color: var(--accent); color: white; }
 .action-text { font-size: 14px; color: var(--text-primary); flex: 1; }
@@ -106,11 +112,11 @@ body {
 #result-area.show { display: block; }
 .loading-overlay {
   display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15,15,20,0.9); z-index: 1000;
+  background: rgba(248,225,238,0.92); z-index: 1000;
   align-items: center; justify-content: center; flex-direction: column; gap: 16px;
 }
 .loading-overlay.show { display: flex; }
-.loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid rgba(155,107,181,0.2); border-top-color: #c471a5; border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-text { color: var(--text-secondary); font-size: 15px; }
 .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.3s ease, transform 0.3s ease; }
@@ -120,9 +126,150 @@ body {
   .wuxing-bar-label { min-width: 56px; font-size: 13px; }
   .form-row, .form-row-3 { grid-template-columns: 1fr; }
 }
+
+/* ===== 花鸟装饰 ===== */
+.bird-deco {
+  position: fixed; top: 30px; right: 40px; z-index: 0; opacity: 0.12;
+  pointer-events: none;
+  animation: birdFloat 8s ease-in-out infinite;
+}
+@keyframes birdFloat {
+  0%, 100% { transform: translateY(0) translateX(0); }
+  25% { transform: translateY(-10px) translateX(5px); }
+  50% { transform: translateY(-4px) translateX(-3px); }
+  75% { transform: translateY(-12px) translateX(2px); }
+}
+.flower-deco-left {
+  position: fixed; bottom: 0; left: -10px; z-index: 0; opacity: 0.10;
+  pointer-events: none;
+}
+.flower-deco-right {
+  position: fixed; bottom: 0; right: -10px; z-index: 0; opacity: 0.10;
+  pointer-events: none;
+  transform: scaleX(-1);
+}
+.petal {
+  position: fixed; z-index: 0; pointer-events: none; opacity: 0;
+  animation: petalFall linear infinite;
+}
+@keyframes petalFall {
+  0% { opacity: 0; transform: translateY(-30px) rotate(0deg) translateX(0); }
+  8% { opacity: 0.18; }
+  85% { opacity: 0.12; }
+  100% { opacity: 0; transform: translateY(100vh) rotate(400deg) translateX(60px); }
+}
+.container { position: relative; z-index: 1; }
 </style>
 </head>
 <body>
+<!-- 花鸟装饰 -->
+<div class="bird-deco">
+  <svg width="120" height="80" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M60 35 Q70 20 85 25 Q75 30 72 35 Z" fill="#9b6bb5"/>
+    <path d="M60 35 Q50 18 35 22 Q48 28 50 35 Z" fill="#b88cc8"/>
+    <path d="M72 35 Q85 28 100 35 Q85 38 72 38 Z" fill="#9b6bb5"/>
+    <path d="M50 35 Q35 26 20 32 Q38 36 50 38 Z" fill="#b88cc8"/>
+    <path d="M55 38 Q58 42 65 38 Q62 45 55 38 Z" fill="#c471a5"/>
+  </svg>
+</div>
+<div class="bird-deco" style="top:80px;right:100px;opacity:0.07;animation-delay:-3s;">
+  <svg width="60" height="40" viewBox="0 0 120 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M60 35 Q70 20 85 25 Q75 30 72 35 Z" fill="#9b6bb5"/>
+    <path d="M60 35 Q50 18 35 22 Q48 28 50 35 Z" fill="#b88cc8"/>
+    <path d="M72 35 Q85 28 100 35 Q85 38 72 38 Z" fill="#9b6bb5"/>
+    <path d="M50 35 Q35 26 20 32 Q38 36 50 38 Z" fill="#b88cc8"/>
+    <path d="M55 38 Q58 42 65 38 Q62 45 55 38 Z" fill="#c471a5"/>
+  </svg>
+</div>
+<div class="flower-deco-left">
+  <svg width="200" height="300" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 枝干 -->
+    <path d="M30 300 Q40 250 35 200 Q30 160 45 120 Q55 90 50 50" stroke="#7a6b50" stroke-width="2.5" fill="none"/>
+    <path d="M45 120 Q65 110 80 90" stroke="#7a6b50" stroke-width="2" fill="none"/>
+    <path d="M35 180 Q15 160 10 130" stroke="#7a6b50" stroke-width="1.8" fill="none"/>
+    <path d="M45 150 Q70 145 85 130" stroke="#7a6b50" stroke-width="1.5" fill="none"/>
+    <!-- 花朵1 - 大 -->
+    <g transform="translate(50,50)">
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#f0b0c8" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#e8a0c0" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#f0b0c8" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#e8a0c0" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#f0b0c8" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="5" fill="#e8c860"/>
+    </g>
+    <!-- 花朵2 -->
+    <g transform="translate(80,90)">
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#d4a0d0" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#c890c8" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#d4a0d0" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#c890c8" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#d4a0d0" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="4" fill="#e8c860"/>
+    </g>
+    <!-- 花朵3 -->
+    <g transform="translate(10,130)">
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#f0b0c8" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#e8a0c0" transform="rotate(60)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#f0b0c8" transform="rotate(120)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#e8a0c0" transform="rotate(180)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#f0b0c8" transform="rotate(240)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#e8a0c0" transform="rotate(300)"/>
+      <circle cx="0" cy="0" r="3.5" fill="#e8c860"/>
+    </g>
+    <!-- 花骨朵 -->
+    <g transform="translate(85,130)">
+      <ellipse cx="0" cy="-4" rx="3" ry="6" fill="#d4a0d0"/>
+      <ellipse cx="3" cy="-3" rx="3" ry="5" fill="#c890c8"/>
+    </g>
+    <!-- 叶子 -->
+    <path d="M40 200 Q20 185 15 170 Q30 180 40 200 Z" fill="#8ab87a" opacity="0.7"/>
+    <path d="M38 220 Q55 205 60 190 Q50 210 38 220 Z" fill="#7aa86a" opacity="0.6"/>
+    <path d="M42 160 Q60 155 68 142 Q55 158 42 160 Z" fill="#8ab87a" opacity="0.5"/>
+  </svg>
+</div>
+<div class="flower-deco-right">
+  <svg width="200" height="300" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 枝干 -->
+    <path d="M30 300 Q40 250 35 200 Q30 160 45 120 Q55 90 50 50" stroke="#7a6b50" stroke-width="2.5" fill="none"/>
+    <path d="M45 120 Q65 110 80 90" stroke="#7a6b50" stroke-width="2" fill="none"/>
+    <path d="M35 180 Q15 160 10 130" stroke="#7a6b50" stroke-width="1.8" fill="none"/>
+    <path d="M45 150 Q70 145 85 130" stroke="#7a6b50" stroke-width="1.5" fill="none"/>
+    <!-- 花朵1 -->
+    <g transform="translate(50,50)">
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#c8a0e0" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#b890d0" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#c8a0e0" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#b890d0" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-12" rx="8" ry="12" fill="#c8a0e0" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="5" fill="#e8c860"/>
+    </g>
+    <!-- 花朵2 -->
+    <g transform="translate(80,90)">
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#f0b0c8" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#e8a0c0" transform="rotate(72)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#f0b0c8" transform="rotate(144)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#e8a0c0" transform="rotate(216)"/>
+      <ellipse cx="0" cy="-9" rx="6" ry="9" fill="#f0b0c8" transform="rotate(288)"/>
+      <circle cx="0" cy="0" r="4" fill="#e8c860"/>
+    </g>
+    <!-- 花朵3 -->
+    <g transform="translate(10,130)">
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#c8a0e0" transform="rotate(0)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#b890d0" transform="rotate(60)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#c8a0e0" transform="rotate(120)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#b890d0" transform="rotate(180)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#c8a0e0" transform="rotate(240)"/>
+      <ellipse cx="0" cy="-8" rx="5" ry="8" fill="#b890d0" transform="rotate(300)"/>
+      <circle cx="0" cy="0" r="3.5" fill="#e8c860"/>
+    </g>
+    <!-- 叶子 -->
+    <path d="M40 200 Q20 185 15 170 Q30 180 40 200 Z" fill="#8ab87a" opacity="0.7"/>
+    <path d="M38 220 Q55 205 60 190 Q50 210 38 220 Z" fill="#7aa86a" opacity="0.6"/>
+    <path d="M42 160 Q60 155 68 142 Q55 158 42 160 Z" fill="#8ab87a" opacity="0.5"/>
+  </svg>
+</div>
+<!-- 飘落花瓣（JS动态生成） -->
+
 <div class="container">
   <div class="header">
     <h1>小鸟疗愈-八字排盘分析</h1>
@@ -248,6 +395,22 @@ body {
 </div>
 
 <script>
+// ========== 飘落花瓣 ==========
+(function() {
+  const petalColors = ['#f0b0c8','#d4a0d0','#e8a0c0','#c890c8','#f5c8d8','#b890d0'];
+  for (let i = 0; i < 8; i++) {
+    const petal = document.createElement('div');
+    petal.className = 'petal';
+    const size = 8 + Math.random() * 10;
+    const left = Math.random() * 100;
+    const dur = 12 + Math.random() * 18;
+    const delay = Math.random() * dur;
+    const color = petalColors[Math.floor(Math.random() * petalColors.length)];
+    petal.style.cssText = `left:${left}%;width:${size}px;height:${size}px;background:${color};border-radius:50% 0 50% 50%;animation-duration:${dur}s;animation-delay:-${delay}s;`;
+    document.body.appendChild(petal);
+  }
+})();
+
 // ========== DATA CONSTANTS ==========
 const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
 const DI_ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
@@ -450,7 +613,7 @@ function getShishen(dayGanIdx, otherGanIdx) {
 
 // ========== WUXING POWER ==========
 const WUXING_LIST = ['木','火','土','金','水'];
-const WUXING_COLORS = ['#4CAF50','#F44336','#FF9800','#9E9E9E','#2196F3'];
+const WUXING_COLORS = ['#5d9e5f','#d45050','#e09040','#9e8ea0','#4a8ec4'];
 
 function getWuxingPower(bazi) {
   const power = [0,0,0,0,0];
@@ -763,7 +926,7 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
   for (let i = 0; i < WUXING_LIST.length; i++) {
     barParts.push('<div class="wuxing-bar-item"><div class="wuxing-bar-label" style="color:'+WUXING_COLORS[i]+'">'+WUXING_LIST[i]+' '+wuxingPower[i].toFixed(1)+'</div><div class="wuxing-bar-track"><div class="wuxing-bar-fill" style="width:'+pcts[i]+'%;background:'+WUXING_COLORS[i]+'"></div></div></div>');
   }
-  parts.push('<div class="section fade-in visible"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' + barParts.join('') + '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '，日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong>（' + getWuxingDesc(analysis.yongShen) + '） | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong>（' + getWuxingDesc(analysis.jiShen) + '）</p></div></div>');
+  parts.push('<div class="section fade-in visible"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' + barParts.join('') + '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '，日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong>（' + getWuxingDesc(analysis.yongShen) + '） | 忌神：<strong style="color:#d45050">' + analysis.jiShen + '</strong>（' + getWuxingDesc(analysis.jiShen) + '）</p></div></div>');
   // 大运
   const dayunParts = [];
   const cy = new Date().getFullYear();
@@ -961,7 +1124,7 @@ function genPersonaSummary(bazi, wp, an, ui) {
   let h = '';
 
   // 大标题区：属性标签 + 古诗词
-  h += '<div style="text-align:center;padding:24px 16px 16px;background:linear-gradient(135deg,rgba(212,168,83,0.08),rgba(212,168,83,0.02));border-radius:16px;margin-bottom:20px;">';
+  h += '<div style="text-align:center;padding:24px 16px 16px;background:linear-gradient(135deg,rgba(196,125,63,0.1),rgba(155,107,181,0.08));border-radius:16px;margin-bottom:20px;border:1px solid rgba(196,125,63,0.12);">';
   h += '<div style="font-size:42px;font-weight:700;color:var(--gold);line-height:1.2;">'+dg+'</div>';
   h += '<div style="font-size:24px;font-weight:700;color:var(--text-primary);margin-top:8px;">'+label+'</div>';
   h += '<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">'+dw+'行日主 · '+pInfo.nature+'</div>';
@@ -971,11 +1134,11 @@ function genPersonaSummary(bazi, wp, an, ui) {
   h += '</div>';
 
   // 性格优势
-  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#4CAF50;font-size:14px;">✦ 性格优势</div>';
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#5d9e5f;font-size:14px;">✦ 性格优势</div>';
   h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">'+pInfo.strengths+'</p></div>';
 
   // 性格盲区
-  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#FF9800;font-size:14px;">✦ 性格盲区</div>';
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#c47d3f;font-size:14px;">✦ 性格盲区</div>';
   h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">'+pInfo.weaknesses+'</p></div>';
 
   // 成长建议
@@ -983,7 +1146,7 @@ function genPersonaSummary(bazi, wp, an, ui) {
   h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;padding-left:12px;border-left:3px solid var(--gold);">'+pInfo.growth+'</p></div>';
 
   // 发展注意事项
-  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#F44336;font-size:14px;">✦ 发展注意事项</div>';
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#d45050;font-size:14px;">✦ 发展注意事项</div>';
   h += '<ul style="margin-top:6px;padding-left:20px;">' + warnings.map(w => '<li style="margin-bottom:8px;font-size:13px;line-height:1.7;">'+w+'</li>').join('') + '</ul></div>';
 
   return h;
@@ -1051,7 +1214,7 @@ function genPersonaProfile(bazi, wp, an, ui) {
   h += '</div>';
 
   // 五行相冲
-  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#F44336;font-size:14px;">✦ 需要留意的属性</div>';
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#d45050;font-size:14px;">✦ 需要留意的属性</div>';
   // 五行相冲的具体摩擦原因描述
   const conflictReason = {
     '木': '木行人性格直来直去，有自己的坚持和原则。当木行与你命局相冲时，对方的固执和"我就是这样"的态度容易与你产生意见分歧——你觉得对方不够灵活，对方觉得你不够坚定。合作中容易出现"各执己见"的僵局。',
@@ -1063,21 +1226,21 @@ function genPersonaProfile(bazi, wp, an, ui) {
   conflictWx.forEach(wx => {
     const gans = wxToGan[wx] || [];
     const reason = conflictReason[wx] || '';
-    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;"><strong style="color:#F44336;">'+wx+'行</strong>（'+gans.join('、')+'日主）的人与你命局有冲，相处中容易产生摩擦或内耗。</p>';
-    h += '<p style="margin-top:2px;font-size:13px;line-height:1.7;padding-left:12px;border-left:2px solid #F44336;color:var(--text-secondary);">'+reason+'</p>';
+    h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;"><strong style="color:#d45050;">'+wx+'行</strong>（'+gans.join('、')+'日主）的人与你命局有冲，相处中容易产生摩擦或内耗。</p>';
+    h += '<p style="margin-top:2px;font-size:13px;line-height:1.7;padding-left:12px;border-left:2px solid #d45050;color:var(--text-secondary);">'+reason+'</p>';
     h += '<p style="margin-top:2px;font-size:12px;line-height:1.6;color:var(--text-muted);">'+(wx===an.jiShen?'这是你的忌神属性，长期与'+wx+'行过重的人密切接触可能让你疲惫——对方的能量会加重你命局中本就过盛的部分，让你"逆流"。':'这是克制你用神的属性，过多接触可能削弱你的"顺流感"——对方的气场会消耗你命局中最需要的能量，让你莫名感到"力不从心"。')+'不是说要完全避开，而是注意保持适当距离和界限，学会"礼貌相处，不必深交"。</p>';
   });
   h += '</div>';
 
   // 地支六冲（夫妻宫）
   if (diZhiLiuChong[dz]) {
-    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#FF9800;font-size:14px;">✦ 夫妻宫提醒</div>';
+    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#e09040;font-size:14px;">✦ 夫妻宫提醒</div>';
     h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">你的日支（夫妻宫）为「'+dz+'」，与「'+diZhiLiuChong[dz]+'」相冲。这意味着你在亲密关系中可能经历较多波动——不是不好，而是需要更多的沟通和磨合。选择伴侣时，如果对方八字中「'+diZhiLiuChong[dz]+'」属性很重，关系中的挑战会更多，但也可以通过相互理解来化解。</p></div>';
   }
 
   // 地支六合（夫妻宫）
   if (diZhiLiuHe[dz]) {
-    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#4CAF50;font-size:14px;">✦ 夫妻宫贵合</div>';
+    h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#5d9e5f;font-size:14px;">✦ 夫妻宫贵合</div>';
     h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">你的日支「'+dz+'」与「'+diZhiLiuHe[dz]+'」六合，这意味着与八字中带「'+diZhiLiuHe[dz]+'」的人容易产生天然的亲近感，亲密关系中相处更和谐。遇到日支为「'+diZhiLiuHe[dz]+'」的人，可以多留意。</p></div>';
   }
 
@@ -1153,7 +1316,7 @@ function genBasicAnalysis(bazi, wp, an, ui) {
   // 命局总览
   h += '<h3>命局总览</h3>';
   h += '<p>日主 <strong>'+dg+'</strong>（'+dw+'），生于'+bazi.month.zhi+'月（'+bazi.month.gan+bazi.month.zhi+'），'+an.analysis+'。</p>';
-  h += '<p>用神：<strong style="color:var(--gold)">'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'） | 忌神：<strong style="color:#F44336">'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'）</p>';
+  h += '<p>用神：<strong style="color:var(--gold)">'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'） | 忌神：<strong style="color:#d45050">'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'）</p>';
 
   // 格局类型
   h += '<h3>格局类型：'+pat+'</h3>';
@@ -1185,7 +1348,7 @@ function genBasicAnalysis(bazi, wp, an, ui) {
   // 用神与忌神
   h += '<h3>用神与忌神详解</h3>';
   h += '<p>用神为 <strong style="color:var(--gold)">'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'），是你命局中"最需要的能量"。宜多接触'+an.yongShen+'属性的人事物——包括行业方向、居住环境、合作关系等。</p>';
-  h += '<p>忌神为 <strong style="color:#F44336">'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'），是你命局中"容易过量的能量"。应适当规避'+an.jiShen+'过旺的环境和决策——但不是完全避免，而是控制比例。</p>';
+  h += '<p>忌神为 <strong style="color:#d45050">'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'），是你命局中"容易过量的能量"。应适当规避'+an.jiShen+'过旺的环境和决策——但不是完全避免，而是控制比例。</p>';
 
   return h;
 }
@@ -1316,31 +1479,31 @@ function genSideJobAnalysis(bazi, an, ui) {
       // 匹配度评级
       let rating, ratingColor, ratingDesc;
       if (isYongShen && isRiZhu) {
-        rating = '极佳'; ratingColor = '#4CAF50'; ratingDesc = '与你的用神和日主完全吻合，是命局中最适合深耕的方向';
+        rating = '极佳'; ratingColor = '#5d9e5f'; ratingDesc = '与你的用神和日主完全吻合，是命局中最适合深耕的方向';
       } else if (isYongShen) {
         rating = '很好'; ratingColor = '#8BC34A'; ratingDesc = '与你的用神属性一致，有利于命局平衡，是值得投入的方向';
       } else if (isRiZhu) {
         rating = '较好'; ratingColor = '#FFC107'; ratingDesc = '与你的日主属性同类，做起来会比较顺手，但要注意是否真正补益命局';
       } else if (isJiShen) {
-        rating = '需谨慎'; ratingColor = '#F44336'; ratingDesc = '与你的忌神属性相同，可能会消耗你的精力或带来额外压力';
+        rating = '需谨慎'; ratingColor = '#d45050'; ratingDesc = '与你的忌神属性相同，可能会消耗你的精力或带来额外压力';
       } else {
-        rating = '中性'; ratingColor = '#FF9800'; ratingDesc = '与用神/忌神均无直接关联，可以作为辅助方向，但不宜过度投入';
+        rating = '中性'; ratingColor = '#e09040'; ratingDesc = '与用神/忌神均无直接关联，可以作为辅助方向，但不宜过度投入';
       }
 
-      h += '<p>「'+fText+'」主要属<strong style="color:'+ratingColor+'">'+bestWx+'</strong>行，与你的用神「'+ys+'」'+(isYongShen?'<strong style="color:#4CAF50">一致</strong>':isJiShen?'<strong style="color:#F44336">相冲（忌神）</strong>':'不一致')+'，与日主「'+dw+'」'+(isRiZhu?'同类':'异类')+'。</p>';
+      h += '<p>「'+fText+'」主要属<strong style="color:'+ratingColor+'">'+bestWx+'</strong>行，与你的用神「'+ys+'」'+(isYongShen?'<strong style="color:#5d9e5f">一致</strong>':isJiShen?'<strong style="color:#d45050">相冲（忌神）</strong>':'不一致')+'，与日主「'+dw+'」'+(isRiZhu?'同类':'异类')+'。</p>';
       h += '<p>匹配度：<strong style="color:'+ratingColor+'">'+rating+'</strong>——'+ratingDesc+'。</p>';
 
       // 是否建议深入研究
       h += '<h4>是否建议深入研究？</h4>';
       if (isYongShen) {
-        h += '<p style="color:#4CAF50">✦ <strong>强烈建议深入研究。</strong>这个方向与你的用神高度契合，深耕此领域能够有效补益命局，越投入越顺遂。建议系统学习、积累专业深度，将其发展为核心竞争力。</p>';
+        h += '<p style="color:#5d9e5f">✦ <strong>强烈建议深入研究。</strong>这个方向与你的用神高度契合，深耕此领域能够有效补益命局，越投入越顺遂。建议系统学习、积累专业深度，将其发展为核心竞争力。</p>';
         if (item.label === '副业') {
           h += '<p>作为副业，'+bestWx+'属性的方向与你的命局天然契合，值得加大投入力度。可以考虑从兴趣型副业向专业型副业转型，提升变现能力。</p>';
         } else if (item.label === '兴趣方向') {
           h += '<p>这个兴趣方向不仅是爱好，更是你命局的"补药"。建议从随性探索转为系统学习，未来有机会将其发展为副业甚至主业。</p>';
         }
       } else if (isJiShen) {
-        h += '<p style="color:#F44336">⚠ <strong>建议适度克制。</strong>这个方向属于你的忌神属性，过度投入容易消耗精力、增加压力。如果必须从事，建议控制时间比例，同时通过'+ys+'属性的活动来平衡。</p>';
+        h += '<p style="color:#d45050">⚠ <strong>建议适度克制。</strong>这个方向属于你的忌神属性，过度投入容易消耗精力、增加压力。如果必须从事，建议控制时间比例，同时通过'+ys+'属性的活动来平衡。</p>';
         if (item.label === '副业') {
           h += '<p>作为副业，这个方向可能会在主业繁忙时加重负担。建议评估投入产出比，如果确实需要维持，尽量减少花在上面的时间。</p>';
         } else if (item.label === '兴趣方向') {
@@ -1352,7 +1515,7 @@ function genSideJobAnalysis(bazi, an, ui) {
           h += '<p>作为兴趣可以放松身心，但如果想深入研究，建议结合用神「'+ys+'」属性的方向一起发展，效果更佳。</p>';
         }
       } else {
-        h += '<p style="color:#FF9800">△ <strong>可以尝试，但不是最优选择。</strong>这个方向与你的用神/忌神都不直接相关，属于中性领域。如果确实感兴趣，可以作为辅助方向发展，同时建议关注与用神「'+ys+'」更匹配的领域。</p>';
+        h += '<p style="color:#e09040">△ <strong>可以尝试，但不是最优选择。</strong>这个方向与你的用神/忌神都不直接相关，属于中性领域。如果确实感兴趣，可以作为辅助方向发展，同时建议关注与用神「'+ys+'」更匹配的领域。</p>';
       }
 
       // 十神路径补充
@@ -1640,7 +1803,7 @@ function genCareerPlan(bazi, dr, ui) {
     // 感情
     h += '<p style="margin-top:4px;font-size:13px;line-height:1.7;"><strong style="color:var(--gold);">💕 感情：</strong>'+advice.relationship+'</p>';
     // 提醒
-    h += '<p style="margin-top:4px;font-size:13px;line-height:1.7;padding-left:10px;border-left:2px solid #F44336;"><strong>⚠️ 提醒：</strong>'+advice.caution+'</p>';
+    h += '<p style="margin-top:4px;font-size:13px;line-height:1.7;padding-left:10px;border-left:2px solid #d45050;"><strong>⚠️ 提醒：</strong>'+advice.caution+'</p>';
 
     h += '</div>';
   }
