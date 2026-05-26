@@ -751,6 +751,8 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
   const maxP = Math.max(...wuxingPower);
   const pcts = wuxingPower.map(p => maxP > 0 ? Math.round(p / maxP * 100) : 0);
   const parts = [];
+  // 个人属性摘要（最前面，立即渲染）
+  parts.push('<div class="section fade-in visible"><div class="analysis-block">' + genPersonaSummary(bazi, wuxingPower, analysis, ui) + '</div></div>');
   // 基本信息
   parts.push('<div class="section fade-in visible"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><div><div style="font-size:14px;color:var(--text-muted);">' + ui.gender + ' · ' + (ui.birthCity||'未知') + ' · ' + ui.year + '-' + ui.month + '-' + ui.day + '</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">真太阳时: ' + ui.trueSolarTime + ' | 经度: ' + ui.birthLng + '°</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">婚恋: ' + ui.marriageStatus + ' | 偏好: ' + ui.sexualOrientation + '</div></div><button onclick="goBack()" style="background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">重新排盘</button></div></div>');
   // 八字排盘
@@ -783,7 +785,7 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
 
   // 分3批异步加载分析内容，避免一次性渲染阻塞
   const batch1 = function() {
-    document.getElementById('slot-persona').outerHTML = '<div class="section fade-in"><div class="section-title">个人属性概括</div><div class="analysis-block">' + genPersonaProfile(bazi, wuxingPower, analysis, ui) + '</div></div>';
+    document.getElementById('slot-persona').outerHTML = '<div class="section fade-in"><div class="section-title">人际相合分析</div><div class="analysis-block">' + genPersonaProfile(bazi, wuxingPower, analysis, ui) + '</div></div>';
     document.getElementById('slot-basic').outerHTML = '<div class="section fade-in"><div class="section-title">八字基本分析</div><div class="analysis-block">' + genBasicAnalysis(bazi, wuxingPower, analysis, ui) + '</div></div>';
     requestAnimationFrame(() => {
       document.querySelectorAll('.section.fade-in:not(.visible)').forEach(el => el.classList.add('visible'));
@@ -835,13 +837,13 @@ function getPersonalityDesc(bazi) {
   return d;
 }
 
-// ========== 个人属性概括 ==========
-function genPersonaProfile(bazi, wp, an, ui) {
+// ========== 个人属性摘要（结果页最前面） ==========
+function genPersonaSummary(bazi, wp, an, ui) {
   const dg = bazi.day.gan; // 日干
   const dw = GAN_WUXING[bazi.day.ganIdx]; // 日干五行
   const gender = ui.gender || '';
   const genderLabel = gender === '女' ? '女' : gender === '男' ? '男' : '';
-  const label = dg + dw + genderLabel; // 如"乙木女"
+  const label = dg + dw + genderLabel; // 如"壬水女"
 
   // ===== 十天干性格详解 =====
   const ganPersonality = {
@@ -907,13 +909,96 @@ function genPersonaProfile(bazi, wp, an, ui) {
     }
   };
 
-  // ===== 五行相合与相冲 =====
+  // ===== 天干×性别古诗词 =====
+  const ganPoem = {
+    '甲_男': '千磨万击还坚劲，任尔东西南北风。',
+    '甲_女': '傲骨凌霜不低头，春风一唤万枝抽。',
+    '乙_男': '柔枝亦可为栋梁，百转千回自成芳。',
+    '乙_女': '蔓引柔条依翠竹，花从细处见工夫。',
+    '丙_男': '赫赫炎威照四方，光明正大立朝堂。',
+    '丙_女': '一笑倾城春满堂，灼灼其华映四方。',
+    '丁_男': '孤灯亦可照长夜，星火终能燎原野。',
+    '丁_女': '烛映纱窗花影瘦，心明如镜照微芒。',
+    '戊_男': '崇山峻岭立苍茫，万钧之重一肩扛。',
+    '戊_女': '厚德载物承万象，静如高山稳如常。',
+    '己_男': '沃野千里生万物，润物无声自有功。',
+    '己_女': '春风化雨润无声，细处见真最有情。',
+    '庚_男': '铁马冰河入梦来，霜刃初试气如虹。',
+    '庚_女': '霜刃出匣寒光凛，不让须眉自有人。',
+    '辛_男': '珠玉在侧光华生，精雕细琢方成器。',
+    '辛_女': '珠圆玉润天成美，巧夺天工不须催。',
+    '壬_男': '乘风破浪会有时，直挂云帆济沧海。',
+    '壬_女': '柔怀若海纳千绪，清智如川映万峰。',
+    '癸_男': '细雨湿衣看不见，闲花落地听无声。',
+    '癸_女': '露从今夜白如玉，润物无声胜有声。'
+  };
+
+  const pInfo = ganPersonality[dg] || ganPersonality['甲'];
+  const poemKey = dg + '_' + genderLabel;
+  const poem = ganPoem[poemKey] || ganPoem[dg + '_男'] || '';
+
+  // 发展注意事项
+  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+  const warnings = [];
+  if (an.dayeStrong) {
+    warnings.push('日主偏强，容易"太把自己当回事"——在做重大决策时，多听听不同意见，避免独断专行。');
+  } else {
+    warnings.push('日主偏弱，容易"太不把自己当回事"——在需要争取的时候要敢于站出来，你的意见同样重要。');
+  }
+  if (ms === '伤官' || ms === '七杀') {
+    warnings.push('月令透出'+ms+'，性格中有比较强的叛逆和锋芒——这是你的武器，但需要学会"择时出鞘"，不是每个场合都需要亮剑。');
+  }
+  if (ms === '正印' || ms === '偏印') {
+    warnings.push('月令透出'+ms+'，容易陷入"学而不做"的陷阱——知识积累到一定程度后，一定要落地实践，否则只是纸上谈兵。');
+  }
+  if (ms === '比肩' || ms === '劫财') {
+    warnings.push('月令透出'+ms+'，人际关系中竞争意识强——合作时提前约定好规则，避免"亲兄弟明算账"变成"亲兄弟翻脸"。');
+  }
+  warnings.push('用神为'+an.yongShen+'，多接触'+an.yongShen+'属性的环境、行业、人脉，会明显感觉"顺流"。远离'+an.jiShen+'属性过重的环境，会让你"逆流"。');
+
+  let h = '';
+
+  // 大标题区：属性标签 + 古诗词
+  h += '<div style="text-align:center;padding:24px 16px 16px;background:linear-gradient(135deg,rgba(212,168,83,0.08),rgba(212,168,83,0.02));border-radius:16px;margin-bottom:20px;">';
+  h += '<div style="font-size:42px;font-weight:700;color:var(--gold);line-height:1.2;">'+dg+'</div>';
+  h += '<div style="font-size:24px;font-weight:700;color:var(--text-primary);margin-top:8px;">'+label+'</div>';
+  h += '<div style="font-size:13px;color:var(--text-muted);margin-top:4px;">'+dw+'行日主 · '+pInfo.nature+'</div>';
+  if (poem) {
+    h += '<div style="margin-top:14px;font-size:15px;color:var(--gold);font-style:italic;letter-spacing:1px;line-height:1.8;">「'+poem+'」</div>';
+  }
+  h += '</div>';
+
+  // 性格优势
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#4CAF50;font-size:14px;">✦ 性格优势</div>';
+  h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">'+pInfo.strengths+'</p></div>';
+
+  // 性格盲区
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#FF9800;font-size:14px;">✦ 性格盲区</div>';
+  h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;">'+pInfo.weaknesses+'</p></div>';
+
+  // 成长建议
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:var(--gold);font-size:14px;">✦ 成长建议</div>';
+  h += '<p style="margin-top:6px;font-size:13px;line-height:1.7;padding-left:12px;border-left:3px solid var(--gold);">'+pInfo.growth+'</p></div>';
+
+  // 发展注意事项
+  h += '<div class="card" style="margin-bottom:10px;"><div style="font-weight:600;color:#F44336;font-size:14px;">✦ 发展注意事项</div>';
+  h += '<ul style="margin-top:6px;padding-left:20px;">' + warnings.map(w => '<li style="margin-bottom:8px;font-size:13px;line-height:1.7;">'+w+'</li>').join('') + '</ul></div>';
+
+  return h;
+}
+
+// ========== 个人属性概括（人际相合/相冲部分） ==========
+function genPersonaProfile(bazi, wp, an, ui) {
+  const dg = bazi.day.gan; // 日干
+  const dw = GAN_WUXING[bazi.day.ganIdx]; // 日干五行
+  const gender = ui.gender || '';
+  const genderLabel = gender === '女' ? '女' : gender === '男' ? '男' : '';
+  const label = dg + dw + genderLabel; // 如"乙木女"
+
   // 天干五合
   const tianGanHe = {'甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊'};
   // 地支六合
   const diZhiLiuHe = {'子':'丑','丑':'子','寅':'亥','亥':'寅','卯':'戌','戌':'卯','辰':'酉','酉':'辰','巳':'申','申':'巳','午':'未','未':'午'};
-  // 地支三合
-  const diZhiSanHe = {'申':'["申子辰"]','子':'["申子辰"]','辰':'["申子辰"]','亥':'["亥卯未"]','卯':'["亥卯未"]','未':'["亥卯未"]','寅':'["寅午戌"]','午':'["寅午戌"]','戌':'["寅午戌"]','巳':'["巳酉丑"]','酉':'["巳酉丑"]','丑':'["巳酉丑"]'};
   // 六冲
   const diZhiLiuChong = {'子':'午','午':'子','丑':'未','未':'丑','寅':'申','申':'寅','卯':'酉','酉':'卯','辰':'戌','戌':'辰','巳':'亥','亥':'巳'};
 
@@ -932,50 +1017,11 @@ function genPersonaProfile(bazi, wp, an, ui) {
   // 五行对应天干
   const wxToGan = {'木':['甲','乙'],'火':['丙','丁'],'土':['戊','己'],'金':['庚','辛'],'水':['壬','癸']};
 
-  // ===== 天干合 =====
+  // 天干合
   const heGan = tianGanHe[dg];
   const heGanWx = heGan ? GAN_WUXING[TIAN_GAN.indexOf(heGan)] : '';
 
-  // ===== 组装输出 =====
-  const pInfo = ganPersonality[dg] || ganPersonality['甲'];
-
   let h = '';
-
-  // 标签区
-  h += '<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">';
-  h += '<div style="font-size:28px;font-weight:700;color:var(--gold);">'+dg+'</div>';
-  h += '<div><div style="font-size:22px;font-weight:700;color:var(--text-primary);">'+label+'</div>';
-  h += '<div style="font-size:13px;color:var(--text-muted);margin-top:2px;">'+dw+'行日主 · '+pInfo.nature+'</div></div>';
-  h += '</div>';
-
-  // 性格分析
-  h += '<h3>性格优势</h3><p>'+pInfo.strengths+'</p>';
-  h += '<h3>性格盲区</h3><p>'+pInfo.weaknesses+'</p>';
-  h += '<h3>成长建议</h3><p style="border-left:3px solid var(--gold);padding-left:10px;">'+pInfo.growth+'</p>';
-
-  // 发展注意事项
-  h += '<h3>发展注意事项</h3>';
-  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
-  const warnings = [];
-  if (an.dayeStrong) {
-    warnings.push('日主偏强，容易"太把自己当回事"——在做重大决策时，多听听不同意见，避免独断专行。');
-  } else {
-    warnings.push('日主偏弱，容易"太不把自己当回事"——在需要争取的时候要敢于站出来，你的意见同样重要。');
-  }
-  if (ms === '伤官' || ms === '七杀') {
-    warnings.push('月令透出'+ms+'，性格中有比较强的叛逆和锋芒——这是你的武器，但需要学会"择时出鞘"，不是每个场合都需要亮剑。');
-  }
-  if (ms === '正印' || ms === '偏印') {
-    warnings.push('月令透出'+ms+'，容易陷入"学而不做"的陷阱——知识积累到一定程度后，一定要落地实践，否则只是纸上谈兵。');
-  }
-  if (ms === '比肩' || ms === '劫财') {
-    warnings.push('月令透出'+ms+'，人际关系中竞争意识强——合作时提前约定好规则，避免"亲兄弟明算账"变成"亲兄弟翻脸"。');
-  }
-  warnings.push('用神为'+an.yongShen+'，多接触'+an.yongShen+'属性的环境、行业、人脉，会明显感觉"顺流"。远离'+an.jiShen+'属性过重的环境，会让你"逆流"。');
-  h += '<ul>' + warnings.map(w => '<li style="margin-bottom:8px;line-height:1.7;">'+w+'</li>').join('') + '</ul>';
-
-  // 相合分析
-  h += '<h3>人际相合</h3>';
 
   // 天干五合
   if (heGan) {
