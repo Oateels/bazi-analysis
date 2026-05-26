@@ -1,0 +1,1300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>八字排盘分析</title>
+<style>
+:root {
+  --bg-primary: #0f0f14;
+  --bg-secondary: #1a1a24;
+  --bg-card: #22222e;
+  --text-primary: #e8e8f0;
+  --text-secondary: #9898a8;
+  --text-muted: #686878;
+  --border: #33334a;
+  --accent: #7b68ee;
+  --accent-soft: rgba(123,104,238,0.15);
+  --gold: #d4a537;
+  --gold-soft: rgba(212,165,55,0.15);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: var(--bg-primary); color: var(--text-primary); line-height: 1.6;
+  min-height: 100vh;
+}
+.container { max-width: 900px; margin: 0 auto; padding: 24px 16px 80px; }
+.header { text-align: center; padding: 40px 0 32px; }
+.header h1 { font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: 8px; }
+.header p { color: var(--text-secondary); font-size: 15px; }
+.section { margin-bottom: 40px; }
+.section-title { font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 16px; padding-left: 12px; border-left: 3px solid var(--accent); }
+.card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+.card-title { font-size: 14px; color: var(--text-secondary); margin-bottom: 12px; font-weight: 500; }
+.form-group { margin-bottom: 20px; }
+.form-label { display: block; font-size: 14px; color: var(--text-secondary); margin-bottom: 8px; font-weight: 500; }
+.form-input, .form-select {
+  width: 100%; background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text-primary);
+  font-size: 15px; font-family: inherit;
+}
+.form-input:focus, .form-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.gender-selector { display: flex; gap: 12px; }
+.gender-btn {
+  flex: 1; padding: 10px; text-align: center; background: var(--bg-secondary);
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  cursor: pointer; font-size: 15px; color: var(--text-secondary); transition: all 0.2s;
+}
+.gender-btn.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.btn-submit {
+  width: 100%; padding: 14px; background: var(--accent); color: white; border: none;
+  border-radius: var(--radius); font-size: 17px; font-weight: 600; cursor: pointer;
+  transition: opacity 0.2s; margin-top: 8px;
+}
+.btn-submit:hover { opacity: 0.9; }
+.btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+.bazi-chart { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.bazi-pillar {
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 12px; text-align: center; position: relative;
+}
+.bazi-pillar.is-day { border-color: var(--accent); background: var(--accent-soft); }
+.pillar-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+.pillar-gan { font-size: 32px; font-weight: 700; line-height: 1.3; color: var(--gold); }
+.pillar-zhi { font-size: 32px; font-weight: 700; line-height: 1.3; color: var(--accent); }
+.pillar-shishen { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+.pillar-canggan { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.wuxing-bar-chart { margin-bottom: 20px; }
+.wuxing-bar-item { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.wuxing-bar-label { font-size: 14px; font-weight: 600; min-width: 70px; text-align: right; }
+.wuxing-bar-track { flex: 1; height: 28px; background: var(--bg-primary); border-radius: 6px; overflow: hidden; }
+.wuxing-bar-fill { height: 100%; border-radius: 6px; transition: width 0.4s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 12px; color: #fff; font-weight: 500; }
+.dayun-timeline { position: relative; padding: 20px 0; overflow-x: auto; }
+.dayun-track { display: flex; gap: 0; min-width: 700px; position: relative; }
+.dayun-item {
+  flex: 1; min-width: 80px; text-align: center; padding: 12px 4px;
+  background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative;
+}
+.dayun-item.is-current { border-color: var(--accent); background: var(--accent-soft); }
+.dayun-ganzhi { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+.dayun-age { font-size: 12px; color: var(--text-secondary); }
+.dayun-shishen { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+.analysis-block { margin-bottom: 24px; }
+.analysis-block h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+.analysis-block p, .analysis-block li { font-size: 14px; color: var(--text-secondary); line-height: 1.8; margin-bottom: 6px; }
+.analysis-block ul { padding-left: 20px; }
+.analysis-block strong { color: var(--text-primary); }
+.tag-pill { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 13px; margin: 4px 4px 4px 0; }
+.tag-gold { background: var(--gold-soft); color: var(--gold); }
+.tag-accent { background: var(--accent-soft); color: var(--accent); }
+.action-item { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.action-item:last-child { border-bottom: none; }
+.action-check {
+  width: 22px; height: 22px; border: 2px solid var(--border); border-radius: 6px;
+  flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; color: var(--accent); background: var(--bg-secondary);
+}
+.action-check.checked { background: var(--accent); border-color: var(--accent); color: white; }
+.action-text { font-size: 14px; color: var(--text-primary); flex: 1; }
+.action-category { font-size: 12px; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 4px; flex-shrink: 0; }
+#result-area { display: none; }
+#result-area.show { display: block; }
+.loading-overlay {
+  display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15,15,20,0.9); z-index: 1000;
+  align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+}
+.loading-overlay.show { display: flex; }
+.loading-spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { color: var(--text-secondary); font-size: 15px; }
+.fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.3s ease, transform 0.3s ease; }
+.fade-in.visible { opacity: 1; transform: translateY(0); }
+@media (max-width: 640px) {
+  .bazi-chart { grid-template-columns: repeat(2, 1fr); }
+  .wuxing-bar-label { min-width: 56px; font-size: 13px; }
+  .form-row, .form-row-3 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>八字排盘分析</h1>
+    <p>输入出生信息，生成完整八字分析报告</p>
+  </div>
+
+  <!-- Input Form -->
+  <div id="input-form">
+    <div class="section">
+      <div class="section-title">出生信息</div>
+      <div class="form-row-3" style="margin-bottom: 16px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">出生日期</label>
+          <div class="form-row-3">
+            <select id="birth-year" class="form-select"></select>
+            <select id="birth-month" class="form-select"></select>
+            <select id="birth-day" class="form-select"></select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">出生时辰</label>
+          <select id="birth-shichen" class="form-select">
+            <option value="">请选择时辰</option>
+            <option value="0,0">子时（23:00-01:00）</option>
+            <option value="1,0">丑时（01:00-03:00）</option>
+            <option value="3,0">寅时（03:00-05:00）</option>
+            <option value="5,0">卯时（05:00-07:00）</option>
+            <option value="7,0">辰时（07:00-09:00）</option>
+            <option value="9,0">巳时（09:00-11:00）</option>
+            <option value="11,0">午时（11:00-13:00）</option>
+            <option value="13,0">未时（13:00-15:00）</option>
+            <option value="15,0">申时（15:00-17:00）</option>
+            <option value="17,0">酉时（17:00-19:00）</option>
+            <option value="19,0">戌时（19:00-21:00）</option>
+            <option value="21,0">亥时（21:00-23:00）</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">性别</label>
+          <div class="gender-selector">
+            <div class="gender-btn" data-gender="男" onclick="selectGender(this)">男</div>
+            <div class="gender-btn" data-gender="女" onclick="selectGender(this)">女</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-row-3" style="margin-top: 16px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">婚恋状态</label>
+          <select id="marriage-status" class="form-select">
+            <option value="单身">单身</option>
+            <option value="恋爱中">恋爱中</option>
+            <option value="已婚">已婚</option>
+            <option value="离异">离异</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">性取向</label>
+          <select id="sexual-orientation" class="form-select">
+            <option value="" selected>请选择</option>
+            <option value="男">男</option>
+            <option value="女">女</option>
+            <option value="均可">均可</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+        </div>
+      </div>
+      <div class="form-label" style="margin-top: 20px;">出生地点</div>
+      <div class="form-row" style="margin-bottom: 4px;">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">省份</label>
+          <input type="text" id="birth-province" class="form-input" placeholder="如：湖南">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">市/区</label>
+          <input type="text" id="birth-city" class="form-input" placeholder="如：常德">
+        </div>
+      </div>
+      <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;" id="birth-coord-display">填写城市后自动匹配经纬度用于真太阳时修正</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">现居信息</div>
+      <div class="form-row">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">省份</label>
+          <input type="text" id="work-province" class="form-input" placeholder="如：上海">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label">市/区</label>
+          <input type="text" id="work-city" class="form-input" placeholder="如：上海">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">职业与兴趣</div>
+      <div class="form-group">
+        <label class="form-label">现在的主业</label>
+        <input type="text" id="main-job" class="form-input" placeholder="例：互联网产品经理、教师、医生等">
+      </div>
+      <div class="form-group">
+        <label class="form-label">副业（可选）</label>
+        <input type="text" id="side-job" class="form-input" placeholder="例：自媒体运营、插画师、咨询等">
+      </div>
+      <div class="form-group">
+        <label class="form-label">兴趣方向</label>
+        <input type="text" id="interests" class="form-input" placeholder="例：玄学、心理学、AI">
+      </div>
+    </div>
+
+    <button class="btn-submit" onclick="onSubmit()">开始排盘分析</button>
+  </div>
+
+  <!-- Result Area (will be populated by JS) -->
+  <div id="result-area"></div>
+</div>
+
+<div class="loading-overlay" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">正在排盘分析...</div>
+</div>
+
+<script>
+// ========== DATA CONSTANTS ==========
+const TIAN_GAN = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const DI_ZHI = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const GAN_WUXING = ['木','木','火','火','土','土','金','金','水','水'];
+const GAN_YINYANG = [1,0,1,0,1,0,1,0,1,0];
+const CANG_GAN = {
+  '子':[{g:'癸',w:1.0}],
+  '丑':[{g:'己',w:0.6},{g:'癸',w:0.3},{g:'辛',w:0.1}],
+  '寅':[{g:'甲',w:0.6},{g:'丙',w:0.3},{g:'戊',w:0.1}],
+  '卯':[{g:'乙',w:1.0}],
+  '辰':[{g:'戊',w:0.6},{g:'乙',w:0.3},{g:'癸',w:0.1}],
+  '巳':[{g:'丙',w:0.6},{g:'庚',w:0.3},{g:'戊',w:0.1}],
+  '午':[{g:'丁',w:0.7},{g:'己',w:0.3}],
+  '未':[{g:'己',w:0.6},{g:'丁',w:0.3},{g:'乙',w:0.1}],
+  '申':[{g:'庚',w:0.6},{g:'壬',w:0.3},{g:'戊',w:0.1}],
+  '酉':[{g:'辛',w:1.0}],
+  '戌':[{g:'戊',w:0.6},{g:'辛',w:0.3},{g:'丁',w:0.1}],
+  '亥':[{g:'壬',w:0.7},{g:'甲',w:0.3}]
+};
+const JIE_QI = [
+  {n:'小寒',l:285},{n:'大寒',l:300},{n:'立春',l:315},{n:'雨水',l:330},
+  {n:'惊蛰',l:345},{n:'春分',l:0},{n:'清明',l:15},{n:'谷雨',l:30},
+  {n:'立夏',l:45},{n:'小满',l:60},{n:'芒种',l:75},{n:'夏至',l:90},
+  {n:'小暑',l:105},{n:'大暑',l:120},{n:'立秋',l:135},{n:'处暑',l:150},
+  {n:'白露',l:165},{n:'秋分',l:180},{n:'寒露',l:195},{n:'霜降',l:210},
+  {n:'立冬',l:225},{n:'小雪',l:240},{n:'大雪',l:255},{n:'冬至',l:270}
+];
+
+// ========== SOLAR TERM & JULIAN DAY ==========
+function toJulianDay(y, m, d, h) {
+  if (m <= 2) { y -= 1; m += 12; }
+  const A = Math.floor(y / 100);
+  const B = 2 - A + Math.floor(A / 4);
+  return Math.floor(365.25 * (y + 4716)) + Math.floor(30.6001 * (m + 1)) + d + h/24.0 + B - 1524.5;
+}
+
+// ========== SUN LONGITUDE (VSOP87 simplified) ==========
+function sunLongitude(JD) {
+  const T = (JD - 2451545.0) / 36525.0;
+  const L0 = (280.46646 + 36000.76983 * T + 0.0003032 * T * T) % 360;
+  const M = (357.52911 + 35999.05029 * T - 0.0001537 * T * T) % 360;
+  const Mr = M * Math.PI / 180;
+  const C = (1.914602 - 0.004817 * T - 0.000014 * T * T) * Math.sin(Mr)
+    + (0.019993 - 0.000101 * T) * Math.sin(2 * Mr)
+    + 0.000289 * Math.sin(3 * Mr);
+  return (L0 + C + 360) % 360;
+}
+
+function solarTermJD(year, angleDeg) {
+  // Binary search: find JD when sun longitude reaches angleDeg
+  const monthMap = {315:2,330:2,345:3,0:3,15:4,30:4,45:5,60:5,75:6,90:6,
+    105:7,120:7,135:8,150:8,165:9,180:9,195:10,210:10,
+    225:11,240:11,255:12,270:12,285:1,300:1};
+  const m = monthMap[angleDeg] || 6;
+  let jdLow = toJulianDay(year, m, 1, 0);
+  let jdHigh = toJulianDay(m === 12 ? year + 1 : year, m === 12 ? 1 : m + 1, 1, 0);
+  for (let i = 0; i < 50; i++) {
+    const jdMid = (jdLow + jdHigh) / 2;
+    const lon = sunLongitude(jdMid);
+    const diff = ((lon - angleDeg + 180) % 360) - 180;
+    if (diff < 0) jdLow = jdMid; else jdHigh = jdMid;
+  }
+  return (jdLow + jdHigh) / 2;
+}
+
+// ========== YEAR PILLAR ==========
+function getYearPillar(year, month, day) {
+  const liChun = solarTermJD(year, 315);
+  const jd = toJulianDay(year, month, day, 12);
+  let y = year;
+  if (jd < liChun) y = year - 1;
+  return {
+    gan: TIAN_GAN[((y - 4) % 10 + 10) % 10],
+    zhi: DI_ZHI[((y - 4) % 12 + 12) % 12],
+    ganIdx: ((y - 4) % 10 + 10) % 10,
+    zhiIdx: ((y - 4) % 12 + 12) % 12
+  };
+}
+
+// ========== MONTH PILLAR ==========
+function getMonthPillar(year, month, day, hour, minute) {
+  const jd = toJulianDay(year, month, day, hour + minute/60.0);
+  const stAngles = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285];
+  const stNames = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'];
+  let monthZhiIdx = 0;
+  // 搜索当年所有节气，找到出生日之前最近的一个
+  for (let i = stAngles.length - 1; i >= 0; i--) {
+    const stjd = solarTermJD(year, stAngles[i]);
+    if (jd >= stjd) { monthZhiIdx = i; break; }
+  }
+  // 如果当年立春前出生，需要看上一年的小寒(285)之后
+  const liChunJD = solarTermJD(year, 315);
+  if (jd < liChunJD) {
+    const xiaohanJD = solarTermJD(year - 1, 285);
+    if (jd >= xiaohanJD) { monthZhiIdx = 11; } // 丑月
+    else {
+      const dongzhiJD = solarTermJD(year - 1, 270);
+      if (jd >= dongzhiJD) { monthZhiIdx = 10; } // 子月
+    }
+  }
+  let ygi = ((year - 4) % 10 + 10) % 10;
+  if (jd < liChunJD) ygi = ((year - 5) % 10 + 10) % 10;
+  const monthGanIdx = (ygi * 2 + monthZhiIdx + 2) % 10;
+  return {
+    gan: TIAN_GAN[monthGanIdx], zhi: stNames[monthZhiIdx],
+    ganIdx: monthGanIdx, zhiIdx: monthZhiIdx + 2
+  };
+}
+
+// ========== DAY PILLAR ==========
+function getDayPillar(y, m, d) {
+  const jd = toJulianDay(y, m, d, 12);
+  const refJD = 2451551; // 2000-01-01 = 戊辰
+  const refGan = 4, refZhi = 6;
+  const delta = Math.round(jd - refJD);
+  return {
+    gan: TIAN_GAN[((refGan + delta) % 10 + 10) % 10],
+    zhi: DI_ZHI[((refZhi + delta) % 12 + 12) % 12],
+    ganIdx: ((refGan + delta) % 10 + 10) % 10,
+    zhiIdx: ((refZhi + delta) % 12 + 12) % 12
+  };
+}
+
+// ========== HOUR PILLAR ==========
+function getHourPillar(dayGanIdx, hour, minute) {
+  const h = hour + minute/60.0;
+  let zhiIdx;
+  if (h >= 23 || h < 1) zhiIdx = 0;
+  else if (h < 3) zhiIdx = 1; else if (h < 5) zhiIdx = 2;
+  else if (h < 7) zhiIdx = 3; else if (h < 9) zhiIdx = 4;
+  else if (h < 11) zhiIdx = 5; else if (h < 13) zhiIdx = 6;
+  else if (h < 15) zhiIdx = 7; else if (h < 17) zhiIdx = 8;
+  else if (h < 19) zhiIdx = 9; else if (h < 21) zhiIdx = 10;
+  else zhiIdx = 11;
+  const group = dayGanIdx % 5;
+  const startGan = [0, 2, 4, 6, 8][group];
+  const ganIdx = (startGan + zhiIdx) % 10;
+  return { gan: TIAN_GAN[ganIdx], zhi: DI_ZHI[zhiIdx], ganIdx, zhiIdx };
+}
+
+// ========== TRUE SOLAR TIME ==========
+function getTrueSolarTime(hour, minute, longitude) {
+  const lonDiff = longitude - 120;
+  const timeCorrection = lonDiff * 4;
+  const totalMinutes = hour * 60 + minute + timeCorrection;
+  const h = ((Math.floor(totalMinutes / 60) % 24) + 24) % 24;
+  const m = Math.round(((totalMinutes % 60) + 60) % 60);
+  return { hour: h, minute: Math.max(0, m) };
+}
+
+// ========== SHISHEN (十神) ==========
+function getShishen(dayGanIdx, otherGanIdx) {
+  const dayWx = GAN_WUXING[dayGanIdx], otherWx = GAN_WUXING[otherGanIdx];
+  const dayYY = GAN_YINYANG[dayGanIdx], otherYY = GAN_YINYANG[otherGanIdx];
+  if (dayWx === otherWx) return dayYY === otherYY ? '比肩' : '劫财';
+  const wxOrder = ['木','火','土','金','水'];
+  const d = wxOrder.indexOf(dayWx), o = wxOrder.indexOf(otherWx);
+  if (o === (d + 4) % 5) return dayYY === otherYY ? '正印' : '偏印';
+  if (o === (d + 1) % 5) return dayYY === otherYY ? '食神' : '伤官';
+  if (o === (d + 3) % 5) return dayYY === otherYY ? '正官' : '七杀';
+  if (o === (d + 2) % 5) return dayYY === otherYY ? '正财' : '偏财';
+  return '未知';
+}
+
+// ========== WUXING POWER ==========
+const WUXING_LIST = ['木','火','土','金','水'];
+const WUXING_COLORS = ['#4CAF50','#F44336','#FF9800','#9E9E9E','#2196F3'];
+
+function getWuxingPower(bazi) {
+  const power = [0,0,0,0,0];
+  function addPower(ganOrZhi, weight) {
+    const gi = TIAN_GAN.indexOf(ganOrZhi);
+    if (gi >= 0) { power[WUXING_LIST.indexOf(GAN_WUXING[gi])] += weight; return; }
+    const cg = CANG_GAN[ganOrZhi];
+    if (cg) cg.forEach(item => { power[WUXING_LIST.indexOf(GAN_WUXING[TIAN_GAN.indexOf(item.g)])] += weight * item.w; });
+  }
+  addPower(bazi.year.gan, 1.0); addPower(bazi.year.zhi, 0.5);
+  addPower(bazi.month.gan, 1.0); addPower(bazi.month.zhi, 0.5);
+  addPower(bazi.day.gan, 1.0); addPower(bazi.day.zhi, 0.5);
+  addPower(bazi.hour.gan, 1.0); addPower(bazi.hour.zhi, 0.5);
+  return power;
+}
+
+// ========== DAYUN (大运) ==========
+function calculateDaYun(bazi, gender, birthYear, birthMonth, birthDay) {
+  const yearIsYang = GAN_YINYANG[bazi.year.ganIdx] === 1;
+  const genderIsMale = (gender === '男');
+  const forward = (yearIsYang && genderIsMale) || (!yearIsYang && !genderIsMale);
+  const birthJD = toJulianDay(birthYear, birthMonth, birthDay, 12);
+  const stAngles = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285];
+  let prevJD = 0, nextJD = 0;
+  // 搜索当年所有节气
+  for (let i = 0; i < stAngles.length; i++) {
+    const jd = solarTermJD(birthYear, stAngles[i]);
+    if (jd <= birthJD) prevJD = jd;
+    if (jd > birthJD && nextJD === 0) nextJD = jd;
+  }
+  // 如果出生在立春前，还需搜索上一年的节气
+  if (prevJD === 0) {
+    for (let i = stAngles.length - 1; i >= 0; i--) {
+      const jd = solarTermJD(birthYear - 1, stAngles[i]);
+      if (jd <= birthJD) { prevJD = jd; break; }
+    }
+  }
+  if (nextJD === 0) nextJD = solarTermJD(birthYear + 1, 315);
+  const daysToPrev = birthJD - prevJD, daysToNext = nextJD - birthJD;
+  const monthsToFirst = forward ? daysToNext / 30.44 : daysToPrev / 30.44;
+  const yearsToFirst = Math.round(monthsToFirst * 10) / 10;
+  const dayun = [];
+  let curGanIdx = bazi.month.ganIdx, curZhiIdx = bazi.month.zhiIdx;
+  for (let i = 0; i < 8; i++) {
+    if (forward) { curGanIdx = (curGanIdx + 1) % 10; curZhiIdx = (curZhiIdx + 1) % 12; }
+    else { curGanIdx = (curGanIdx - 1 + 10) % 10; curZhiIdx = (curZhiIdx - 1 + 12) % 12; }
+    const ageStart = Math.round(yearsToFirst + i * 10);
+    dayun.push({ ganzhi: TIAN_GAN[curGanIdx] + DI_ZHI[curZhiIdx], ganIdx: curGanIdx, zhiIdx: curZhiIdx,
+      ageStart, ageEnd: ageStart + 9, shishen: getShishen(bazi.day.ganIdx, curGanIdx) });
+  }
+  return { dayun, yearsToFirst, forward };
+}
+
+// ========== LIUNIAN (流年) ==========
+function getLiunian(year) {
+  return { gan: TIAN_GAN[((year-4)%10+10)%10], zhi: DI_ZHI[((year-4)%12+12)%12],
+    ganIdx: ((year-4)%10+10)%10, zhiIdx: ((year-4)%12+12)%12 };
+}
+
+// ========== ANALYZE YONGSHEN ==========
+function analyzeYongShen(bazi, wuxingPower) {
+  const dayWx = GAN_WUXING[bazi.day.ganIdx];
+  const dayMasterPower = wuxingPower[WUXING_LIST.indexOf(dayWx)];
+  const avg = wuxingPower.reduce((a,b) => a+b) / 5;
+  const dayeStrong = dayMasterPower > avg * 1.2;
+  let yongShen, jiShen, analysis;
+  if (dayeStrong) {
+    yongShen = WUXING_LIST[(WUXING_LIST.indexOf(dayWx)+1)%5];
+    jiShen = WUXING_LIST[WUXING_LIST.indexOf(dayWx)];
+    analysis = '日主偏强，宜泄宜克';
+  } else {
+    yongShen = WUXING_LIST[(WUXING_LIST.indexOf(dayWx)+4)%5];
+    jiShen = WUXING_LIST[(WUXING_LIST.indexOf(dayWx)+2)%5];
+    analysis = '日主偏弱，宜生宜扶';
+  }
+  return { yongShen, jiShen, analysis, dayeStrong, dayMasterPower: dayMasterPower.toFixed(1), avg: avg.toFixed(1) };
+}
+
+// ========== CITY COORDINATES (simplified) ==========
+const CITY_COORDS = {
+  '北京':{lng:116.40,lat:39.90},'上海':{lng:121.47,lat:31.23},'天津':{lng:117.20,lat:39.13},
+  '重庆':{lng:106.55,lat:29.56},'哈尔滨':{lng:126.63,lat:45.75},'长春':{lng:125.35,lat:43.88},
+  '沈阳':{lng:123.43,lat:41.80},'呼和浩特':{lng:111.75,lat:40.84},'石家庄':{lng:114.51,lat:38.04},
+  '太原':{lng:112.55,lat:37.87},'济南':{lng:117.00,lat:36.67},'郑州':{lng:113.65,lat:34.76},
+  '西安':{lng:108.94,lat:34.26},'兰州':{lng:103.83,lat:36.06},'银川':{lng:106.27,lat:38.47},
+  '西宁':{lng:101.78,lat:36.62},'乌鲁木齐':{lng:87.62,lat:43.83},'合肥':{lng:117.28,lat:31.86},
+  '南京':{lng:118.78,lat:32.06},'杭州':{lng:120.15,lat:30.29},'福州':{lng:119.30,lat:26.08},
+  '南昌':{lng:115.86,lat:28.68},'长沙':{lng:112.98,lat:28.19},'武汉':{lng:114.30,lat:30.59},
+  '成都':{lng:104.07,lat:30.67},'贵阳':{lng:106.71,lat:26.65},'昆明':{lng:102.83,lat:25.02},
+  '拉萨':{lng:91.11,lat:29.65},'广州':{lng:113.26,lat:23.13},'南宁':{lng:108.32,lat:22.82},
+  '海口':{lng:110.35,lat:20.02},'香港':{lng:114.17,lat:22.28},'澳门':{lng:113.55,lat:22.20},
+  '台北':{lng:121.52,lat:25.05},'深圳':{lng:114.06,lat:22.55},'苏州':{lng:120.62,lat:31.30},
+  '无锡':{lng:120.30,lat:31.57},'宁波':{lng:121.55,lat:29.87},'温州':{lng:120.70,lat:28.00},
+  '嘉兴':{lng:120.76,lat:30.75},'绍兴':{lng:120.58,lat:30.00},'金华':{lng:119.65,lat:29.08},
+  '常州':{lng:119.97,lat:31.78},'南通':{lng:120.86,lat:32.01},'扬州':{lng:119.42,lat:32.39},
+  '镇江':{lng:119.45,lat:32.20},'泰州':{lng:119.92,lat:32.46},'徐州':{lng:117.18,lat:34.26},
+  '盐城':{lng:120.16,lat:33.35},'连云港':{lng:119.22,lat:34.60},'淮安':{lng:119.02,lat:33.60},
+  '东莞':{lng:113.75,lat:23.05},'佛山':{lng:113.12,lat:23.02},'珠海':{lng:113.58,lat:22.27},
+  '中山':{lng:113.38,lat:22.52},'惠州':{lng:114.42,lat:23.11},'汕头':{lng:116.68,lat:23.35},
+  '江门':{lng:113.08,lat:22.58},'湛江':{lng:110.36,lat:21.27},'肇庆':{lng:112.47,lat:23.05},
+  '茂名':{lng:110.92,lat:21.66},'常州':{lng:119.97,lat:31.78},'烟台':{lng:121.45,lat:37.46},
+  '潍坊':{lng:119.16,lat:36.71},'济宁':{lng:116.59,lat:35.41},'淄博':{lng:118.05,lat:36.81},
+  '威海':{lng:122.12,lat:37.51},'临沂':{lng:118.35,lat:35.10},'泰安':{lng:117.09,lat:36.20},
+  '日照':{lng:119.53,lat:35.42},'德州':{lng:116.36,lat:37.45},'聊城':{lng:115.98,lat:36.45},
+  '青岛':{lng:120.38,lat:36.07},'大连':{lng:121.62,lat:38.91},'鞍山':{lng:122.99,lat:41.11},
+  '吉林':{lng:126.55,lat:43.84},'齐齐哈尔':{lng:123.97,lat:47.35},'大庆':{lng:125.10,lat:46.58},
+  '保定':{lng:115.48,lat:38.87},'唐山':{lng:118.18,lat:39.63},'秦皇岛':{lng:119.60,lat:39.94},
+  '邯郸':{lng:114.54,lat:36.63},'廊坊':{lng:116.70,lat:39.52},'沧州':{lng:116.86,lat:38.31},
+  '大同':{lng:113.30,lat:40.08},'运城':{lng:111.00,lat:35.03},'临汾':{lng:111.52,lat:36.09},
+  '洛阳':{lng:112.45,lat:34.62},'开封':{lng:114.35,lat:34.80},'平顶山':{lng:113.19,lat:33.77},
+  '新乡':{lng:113.93,lat:35.30},'安阳':{lng:114.39,lat:36.10},'焦作':{lng:113.25,lat:35.22},
+  '许昌':{lng:113.85,lat:34.03},'南阳':{lng:112.53,lat:33.00},'信阳':{lng:114.07,lat:32.13},
+  '芜湖':{lng:118.38,lat:31.33},'蚌埠':{lng:117.36,lat:32.94},'阜阳':{lng:115.81,lat:32.89},
+  '淮南':{lng:116.99,lat:32.63},'马鞍山':{lng:118.51,lat:31.67},'泉州':{lng:118.59,lat:24.87},
+  '厦门':{lng:118.09,lat:24.48},'漳州':{lng:117.65,lat:24.51},'莆田':{lng:119.01,lat:24.44},
+  '九江':{lng:115.99,lat:29.71},'赣州':{lng:114.93,lat:25.83},'吉安':{lng:114.99,lat:27.11},
+  '景德镇':{lng:117.21,lat:29.29},'宜春':{lng:114.39,lat:27.80},'岳阳':{lng:113.13,lat:29.37},
+  '常德':{lng:111.70,lat:29.05},'株洲':{lng:113.13,lat:27.83},'湘潭':{lng:112.94,lat:27.83},
+  '衡阳':{lng:112.57,lat:26.89},'邵阳':{lng:111.47,lat:27.24},'益阳':{lng:112.36,lat:28.55},
+  '郴州':{lng:113.01,lat:25.77},'永州':{lng:111.61,lat:26.42},'怀化':{lng:109.98,lat:27.55},
+  '娄底':{lng:112.00,lat:27.71},'张家界':{lng:110.48,lat:29.12},'宜昌':{lng:111.29,lat:30.69},
+  '襄阳':{lng:112.14,lat:32.04},'荆州':{lng:112.24,lat:30.33},'十堰':{lng:110.80,lat:32.65},
+  '黄冈':{lng:114.87,lat:30.45},'孝感':{lng:113.92,lat:30.92},'荆门':{lng:112.20,lat:31.04},
+  '鄂州':{lng:114.89,lat:30.39},'黄石':{lng:115.04,lat:30.20},'咸宁':{lng:114.32,lat:29.84},
+  '绵阳':{lng:104.73,lat:31.47},'德阳':{lng:104.40,lat:31.13},'宜宾':{lng:104.62,lat:28.77},
+  '南充':{lng:106.11,lat:30.84},'泸州':{lng:105.44,lat:28.87},'达州':{lng:107.47,lat:31.21},
+  '乐山':{lng:103.77,lat:29.55},'内江':{lng:105.06,lat:29.58},'遂宁':{lng:105.59,lat:30.53},
+  '广安':{lng:106.63,lat:30.47},'遵义':{lng:106.93,lat:27.73},'曲靖':{lng:103.80,lat:25.49},
+  '玉溪':{lng:102.54,lat:24.35},'大理':{lng:100.23,lat:25.59},'桂林':{lng:110.29,lat:25.27},
+  '柳州':{lng:109.41,lat:24.33},'北海':{lng:109.12,lat:21.48},'梧州':{lng:111.28,lat:23.48},
+  '三亚':{lng:109.51,lat:18.25},'咸阳':{lng:108.71,lat:34.33},'宝鸡':{lng:107.15,lat:34.37},
+  '渭南':{lng:109.50,lat:34.50},'汉中':{lng:107.03,lat:33.07},'延安':{lng:109.49,lat:36.59},
+  '天水':{lng:105.72,lat:34.58},'酒泉':{lng:98.51,lat:39.74},'石嘴山':{lng:106.38,lat:38.98},
+  '吴忠':{lng:106.20,lat:37.99},'格尔木':{lng:94.90,lat:36.42},'克拉玛依':{lng:84.87,lat:45.59},
+  '喀什':{lng:75.99,lat:39.47},'伊犁':{lng:81.32,lat:43.92},'赤峰':{lng:118.87,lat:42.26},
+  '通辽':{lng:122.26,lat:43.65},'鄂尔多斯':{lng:109.78,lat:39.61},'包头':{lng:109.84,lat:40.66},
+  '衡水':{lng:115.68,lat:37.73},'承德':{lng:117.93,lat:40.97},'张家口':{lng:114.88,lat:40.82},
+  '晋中':{lng:112.75,lat:37.69},'长治':{lng:113.12,lat:36.19},'晋城':{lng:112.85,lat:35.49},
+  '朔州':{lng:112.43,lat:39.33},'枣庄':{lng:117.32,lat:34.81},'东营':{lng:118.67,lat:37.43},
+  '滨州':{lng:118.02,lat:37.38},'菏泽':{lng:115.48,lat:35.23},'驻马店':{lng:114.02,lat:32.98},
+  '周口':{lng:114.65,lat:33.63},'商丘':{lng:115.65,lat:34.44},'漯河':{lng:114.02,lat:33.58},
+  '鹤壁':{lng:114.30,lat:35.75},'濮阳':{lng:115.03,lat:35.76},'三门峡':{lng:111.20,lat:34.77},
+  '黄山':{lng:118.34,lat:29.71},'安庆':{lng:117.05,lat:30.53},'铜陵':{lng:117.81,lat:30.94},
+  '池州':{lng:117.49,lat:30.66},'亳州':{lng:115.78,lat:33.85},'宿州':{lng:116.96,lat:33.65},
+  '六安':{lng:116.52,lat:31.74},'滁州':{lng:118.32,lat:32.30},'龙岩':{lng:117.01,lat:25.08},
+  '三明':{lng:117.64,lat:26.27},'南平':{lng:118.18,lat:26.64},'宁德':{lng:119.53,lat:26.66},
+  '抚州':{lng:116.36,lat:27.95},'上饶':{lng:117.97,lat:28.45},'萍乡':{lng:113.85,lat:27.62},
+  '新余':{lng:114.92,lat:27.82},'鹰潭':{lng:117.07,lat:28.26},'丽水':{lng:119.92,lat:28.45},
+  '衢州':{lng:118.87,lat:28.94},'台州':{lng:121.42,lat:28.66},'舟山':{lng:122.11,lat:30.01},
+  '湖州':{lng:120.09,lat:30.87},'宿迁':{lng:118.28,lat:33.96},'铜仁':{lng:109.19,lat:27.72},
+  '毕节':{lng:105.29,lat:27.30},'六盘水':{lng:104.83,lat:26.58},'安顺':{lng:105.95,lat:26.25},
+  '黔南':{lng:107.52,lat:26.26},'普洱':{lng:100.97,lat:22.79},'临沧':{lng:100.09,lat:23.88},
+  '楚雄':{lng:101.55,lat:25.03},'红河':{lng:103.38,lat:23.37},'文山':{lng:104.24,lat:23.37},
+  '百色':{lng:106.62,lat:23.90},'河池':{lng:108.06,lat:24.70},'来宾':{lng:109.23,lat:23.73},
+  '崇左':{lng:107.37,lat:22.38},'贺州':{lng:111.55,lat:24.41},'防城港':{lng:108.35,lat:21.69}
+};
+
+function lookupCityCoord(cityName) {
+  if (!cityName) return null;
+  const name = cityName.trim();
+  if (CITY_COORDS[name]) return CITY_COORDS[name];
+  // 尝试模糊匹配：去掉"市"字
+  const nameNoShi = name.replace(/市$/, '');
+  if (CITY_COORDS[nameNoShi]) return CITY_COORDS[nameNoShi];
+  // 遍历匹配包含关系
+  for (const key of Object.keys(CITY_COORDS)) {
+    if (key.includes(nameNoShi) || nameNoShi.includes(key)) return CITY_COORDS[key];
+  }
+  return null;
+}
+
+// ========== UI HELPER FUNCTIONS ==========
+let selectedGender = '';
+function selectGender(el) {
+  document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedGender = el.dataset.gender;
+}
+function populateDateSelects() {
+  const yearSel = document.getElementById('birth-year');
+  const monthSel = document.getElementById('birth-month');
+  const daySel = document.getElementById('birth-day');
+  yearSel.innerHTML = '<option value="">请选择</option>';
+  for (let y = 1940; y <= 2026; y++) {
+    const o = document.createElement('option'); o.value = y; o.textContent = y + '年';
+    yearSel.appendChild(o);
+  }
+  monthSel.innerHTML = '<option value="">请选择</option>';
+  for (let m = 1; m <= 12; m++) {
+    const o = document.createElement('option'); o.value = m; o.textContent = m + '月';
+    monthSel.appendChild(o);
+  }
+  function updateDays() {
+    const yv = yearSel.value, mv = monthSel.value;
+    const curDay = parseInt(daySel.value) || 0;
+    daySel.innerHTML = '<option value="">请选择</option>';
+    if (yv && mv) {
+      const y = parseInt(yv), m = parseInt(mv);
+      const maxDay = new Date(y, m, 0).getDate();
+      for (let d = 1; d <= maxDay; d++) {
+        const o = document.createElement('option'); o.value = d; o.textContent = d + '日';
+        if (d === curDay) o.selected = true;
+        daySel.appendChild(o);
+      }
+    }
+  }
+  yearSel.addEventListener('change', updateDays);
+  monthSel.addEventListener('change', updateDays);
+}
+
+// ========== MAIN SUBMIT ==========
+function onSubmit() {
+  const year = parseInt(document.getElementById('birth-year').value);
+  const month = parseInt(document.getElementById('birth-month').value);
+  const day = parseInt(document.getElementById('birth-day').value);
+  const shichenVal = document.getElementById('birth-shichen').value;
+  if (!year || !month || !day) { alert('请选择出生日期'); return; }
+  if (!shichenVal) { alert('请选择出生时辰'); return; }
+  if (!selectedGender) { alert('请选择性别'); return; }
+  const [hour, minute] = shichenVal.split(',').map(Number);
+  const birthCityName = document.getElementById('birth-city').value.trim();
+  const birthProvinceName = document.getElementById('birth-province').value.trim();
+  let birthLng = 120.00, birthLat = 30.00; // 默认东经120度
+  const birthCoord = lookupCityCoord(birthCityName);
+  if (birthCoord) { birthLng = birthCoord.lng; birthLat = birthCoord.lat; }
+  // 显示经纬度
+  document.getElementById('birth-coord-display').textContent = birthCoord
+    ? '已匹配: ' + birthCityName + ' 经度 ' + birthLng + '°, 纬度 ' + birthLat + '°'
+    : '未找到"' + birthCityName + '"的经纬度，使用默认东经120°（可能影响真太阳时修正）';
+  const trueTime = getTrueSolarTime(hour, minute, birthLng);
+  const trueHour = trueTime.hour, trueMinute = trueTime.minute;
+  const yearPillar = getYearPillar(year, month, day);
+  const monthPillar = getMonthPillar(year, month, day, trueHour, trueMinute);
+  const dayPillar = getDayPillar(year, month, day);
+  const hourPillar = getHourPillar(dayPillar.ganIdx, trueHour, trueMinute);
+  const bazi = { year: yearPillar, month: monthPillar, day: dayPillar, hour: hourPillar };
+  const wuxingPower = getWuxingPower(bazi);
+  const analysis = analyzeYongShen(bazi, wuxingPower);
+  const dayunResult = calculateDaYun(bazi, selectedGender, year, month, day);
+  const mainJob = document.getElementById('main-job').value;
+  const sideJob = document.getElementById('side-job').value;
+  const interests = document.getElementById('interests').value;
+  const marriageStatus = document.getElementById('marriage-status').value;
+  const sexualOrientation = document.getElementById('sexual-orientation').value;
+  const workCity = document.getElementById('work-city').value.trim();
+  const workProvince = document.getElementById('work-province').value.trim();
+  document.getElementById('loading').classList.add('show');
+  renderResults(bazi, wuxingPower, analysis, dayunResult, {
+    mainJob, sideJob, interests,
+    workCity: workCity || workProvince,
+    birthCity: birthCityName || birthProvinceName,
+    gender: selectedGender,
+    marriageStatus, sexualOrientation,
+    trueSolarTime: trueHour + ':' + String(trueMinute).padStart(2,'0'),
+    birthLng, birthLat, year, month, day, hour, minute
+  });
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('input-form').style.display = 'none';
+  document.getElementById('result-area').classList.add('show');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+// ========== RENDER FUNCTIONS ==========
+function renderResults(bazi, wuxingPower, analysis, dayunResult, ui) {
+  const container = document.getElementById('result-area');
+  const maxP = Math.max(...wuxingPower);
+  const pcts = wuxingPower.map(p => maxP > 0 ? Math.round(p / maxP * 100) : 0);
+  container.innerHTML = '<div class="section fade-in"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><div><div style="font-size:14px;color:var(--text-muted);">' + ui.gender + ' · ' + (ui.birthCity||'未知') + ' · ' + ui.year + '-' + ui.month + '-' + ui.day + '</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">真太阳时: ' + ui.trueSolarTime + ' | 经度: ' + ui.birthLng + '°</div><div style="font-size:13px;color:var(--text-muted);margin-top:2px;">婚恋: ' + ui.marriageStatus + ' | 偏好: ' + ui.sexualOrientation + '</div></div><button onclick="goBack()" style="background:none;border:1px solid var(--border);color:var(--text-secondary);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:13px;">重新排盘</button></div></div>' +
+    '<div class="section fade-in"><div class="section-title">八字排盘</div><div class="bazi-chart">' +
+    renderPillar('年柱', bazi.year, bazi.day.ganIdx) + renderPillar('月柱', bazi.month, bazi.day.ganIdx) + renderPillar('日柱', bazi.day, bazi.day.ganIdx) + renderPillar('时柱', bazi.hour, bazi.day.ganIdx) +
+    '</div></div>' +
+    '<div class="section fade-in"><div class="section-title">五行力量分析</div><div class="wuxing-bar-chart">' +
+    WUXING_LIST.map((wx,i) => '<div class="wuxing-bar-item"><div class="wuxing-bar-label" style="color:'+WUXING_COLORS[i]+'">'+wx+' '+wuxingPower[i].toFixed(1)+'</div><div class="wuxing-bar-track"><div class="wuxing-bar-fill" style="width:'+pcts[i]+'%;background:'+WUXING_COLORS[i]+'"></div></div></div>').join('') +
+    '</div><div class="card" style="margin-top:12px;"><div class="card-title">格局判断</div><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;">' + analysis.analysis + '。日主' + bazi.day.gan + '（' + GAN_WUXING[bazi.day.ganIdx] + '）力量 ' + analysis.dayMasterPower + ' / 平均 ' + analysis.avg + '。<br>用神：<strong style="color:var(--gold)">' + analysis.yongShen + '</strong> | 忌神：<strong style="color:#F44336">' + analysis.jiShen + '</strong></p></div></div>' +
+    '<div class="section fade-in"><div class="section-title">大运走势</div><div style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">起运年龄：约' + Math.round(dayunResult.yearsToFirst) + '岁（' + (ui.year + Math.round(dayunResult.yearsToFirst)) + '年）' + (dayunResult.forward ? '顺排' : '逆排') + '</div><div class="dayun-timeline"><div class="dayun-track">' +
+    dayunResult.dayun.map(dy => { const cy = new Date().getFullYear(); const ca = cy - ui.year; const ic = ca >= dy.ageStart && ca <= dy.ageEnd; return '<div class="dayun-item '+(ic?'is-current':'')+'"><div class="dayun-ganzhi">'+dy.ganzhi+'</div><div class="dayun-age">'+dy.ageStart+'-'+dy.ageEnd+'岁</div><div class="dayun-year" style="font-size:11px;color:var(--text-muted);">'+(ui.year+dy.ageStart)+'-'+(ui.year+dy.ageEnd)+'</div><div class="dayun-shishen">'+dy.shishen+'</div>'+(ic?'<div style="font-size:10px;color:var(--accent);margin-top:2px;">★当前</div>':'')+'</div>'; }).join('') +
+    '</div></div></div>' +
+    '<div class="section fade-in"><div class="section-title">八字基本分析</div><div class="analysis-block">' + genBasicAnalysis(bazi, wuxingPower, analysis, ui) + '</div></div>' +
+    '<div class="section fade-in"><div class="section-title">适合行业方向</div><div class="analysis-block">' + genIndustry(bazi, analysis, ui) + '</div></div>' +
+    (genSideJobAnalysis(bazi, analysis, ui) ? '<div class="section fade-in"><div class="section-title">副业/兴趣与八字分析</div><div class="analysis-block">' + genSideJobAnalysis(bazi, analysis, ui) + '</div></div>' : '') +
+    '<div class="section fade-in"><div class="section-title">未来10年职业规划</div><div class="analysis-block">' + genCareerPlan(bazi, dayunResult, ui) + '</div></div>' +
+    '<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui) + '</div></div>' +
+    '<div class="section fade-in"><div class="section-title">2026年行动清单</div><div class="analysis-block">' + genAction2026(bazi, dayunResult, ui, analysis) + '</div></div>';
+  // 直接显示所有内容
+  requestAnimationFrame(() => { document.querySelectorAll('.fade-in').forEach(el => el.classList.add('visible')); });
+}
+
+function renderPillar(label, pillar, dayGanIdx) {
+  const ss = getShishen(dayGanIdx, pillar.ganIdx);
+  const cg = CANG_GAN[pillar.zhi]; const cgStr = cg ? cg.map(c=>c.g).join(' ') : '';
+  const isDay = label === '日柱';
+  return '<div class="bazi-pillar '+(isDay?'is-day':'')+'"><div class="pillar-label">'+label+'</div><div class="pillar-gan">'+pillar.gan+'</div><div class="pillar-zhi">'+pillar.zhi+'</div><div class="pillar-shishen">'+ss+'</div><div class="pillar-canggan">'+cgStr+'</div></div>';
+}
+
+// ========== ANALYSIS GENERATORS ==========
+function getWuxingDesc(wx) { return {'木':'代表生长、创意、学习','火':'代表热情、表现、名声','土':'代表稳定、承载、实业','金':'代表决断、执行、财富','水':'代表智慧、流动、沟通'}[wx]||''; }
+
+function getPersonalityDesc(bazi) {
+  const dg = bazi.day.gan, dw = GAN_WUXING[bazi.day.ganIdx];
+  let d = '';
+  if (dg==='甲'||dg==='乙') d='你具有木的特质，富有创造力和进取心，善于学习和成长。';
+  else if (dg==='丙'||dg==='丁') d='你具有火的特质，热情开朗，富有表现力和感染力。';
+  else if (dg==='戊'||dg==='己') d='你具有土的特质，稳重踏实，有责任感，善于承载和包容。';
+  else if (dg==='庚'||dg==='辛') d='你具有金的特质，果断坚毅，有决断力和执行力。';
+  else d='你具有水的特质，聪明灵活，善于思考和变通。';
+  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+  if (ms==='食神'||ms==='伤官') d+='月令透食伤，思维活跃，表达能力强，适合创意、内容、教育类工作。';
+  if (ms==='正官'||ms==='七杀') d+='月令透官杀，有责任心，适合管理、组织类工作，但压力也较大。';
+  if (ms==='正印'||ms==='偏印') d+='月令透印星，学习能力强，适合学术、研究、幕后支持类工作。';
+  return d;
+}
+
+function genBasicAnalysis(bazi, wp, an, ui) {
+  const dg = bazi.day.gan, dw = GAN_WUXING[bazi.day.ganIdx];
+  const mxi = wp.indexOf(Math.max(...wp)), mni = wp.indexOf(Math.min(...wp));
+  const mw = WUXING_LIST[mxi], nw = WUXING_LIST[mni];
+  let pat = '正格';
+  if (mw==='金'&&wp[mxi]>wp[WUXING_LIST.indexOf('土')]*1.5) pat='从革格倾向';
+  else if (mw==='木') pat='曲直格倾向'; else if (mw==='水') pat='润下格倾向';
+  else if (mw==='火') pat='炎上格倾向'; else if (mw==='土') pat='稼穑格倾向';
+  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+  const hs = getShishen(bazi.day.ganIdx, bazi.hour.ganIdx);
+  return '<h3>命局总览</h3><p>日主 <strong>'+dg+'</strong>（'+dw+'），生于'+bazi.month.zhi+'月（'+bazi.month.gan+bazi.month.zhi+'），'+an.analysis+'。</p><p>格局类型：<strong>'+pat+'</strong>。月令透出 <strong>'+ms+'</strong>，时柱透出 <strong>'+hs+'</strong>。</p><p>五行最强：<strong>'+mw+'</strong>（'+wp[mxi].toFixed(1)+'），五行最弱：<strong>'+nw+'</strong>（'+wp[mni].toFixed(1)+'）。</p><h3>性格特点</h3><p>'+getPersonalityDesc(bazi)+'</p><h3>用神与忌神</h3><p>用神为 <strong>'+an.yongShen+'</strong>（'+getWuxingDesc(an.yongShen)+'），宜多接触'+an.yongShen+'属性的人事物。</p><p>忌神为 <strong>'+an.jiShen+'</strong>（'+getWuxingDesc(an.jiShen)+'），应适当规避'+an.jiShen+'过旺的环境。</p>';
+}
+
+function genIndustry(bazi, an, ui) {
+  const ys = an.yongShen, dw = GAN_WUXING[bazi.day.ganIdx];
+  const ind = {'木':['教育','文化','出版','新媒体','园艺','环保','服装','设计'],'火':['媒体','广告','影视','娱乐','互联网','餐饮','能源','光电'],'土':['房地产','建筑','农业','矿业','保险','咨询','行政管理'],'金':['金融','银行','证券','法律','机械','制造','珠宝','金属'],'水':['贸易','物流','旅游','航运','水产','酒类','IT','咨询']};
+  const rec = ind[ys]||[], dwi = ind[dw]||[];
+
+  // 根据用户填写的主业/副业/兴趣进行个性化匹配分析
+  let match = '';
+  const userFields = [ui.mainJob, ui.sideJob, ui.interests].filter(Boolean).join('、');
+  if (userFields) {
+    match += '<h3>你的职业/兴趣与八字匹配度</h3>';
+    const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+    const isShiShang = (ms==='食神'||ms==='伤官');
+    const isYinXing = (ms==='正印'||ms==='偏印');
+    const isGuanSha = (ms==='正官'||ms==='七杀');
+    const isBiJie = (ms==='比肩'||ms==='劫财');
+    const isCaiXing = (ms==='正财'||ms==='偏财');
+
+    // 五行-行业关键词映射
+    const wxKeywords = {
+      '木':['教育','培训','文化','出版','文创','写作','设计','园林','环保','健康','养生','服装','纺织','草药','中医','植物','木'],
+      '火':['媒体','广告','影视','娱乐','直播','互联网','餐饮','能源','光电','心理','塔罗','占卜','神秘','表演','美容','化妆','摄影','烟火','电','光','热'],
+      '土':['房地产','建筑','农业','矿业','保险','咨询','行政','管理','仓储','物流','宠物','畜牧','地产','矿产','土','石','陶'],
+      '金':['金融','银行','证券','法律','机械','制造','珠宝','金属','财务','会计','审计','军警','外科','刀','金','银','铁','钱'],
+      '水':['贸易','物流','旅游','航运','水产','酒类','IT','咨询','传播','通讯','水利','饮料','酒','茶','水','海洋','鱼']
+    };
+
+    // 分析每个领域与用神/日主的匹配度
+    const fields = [];
+    if (ui.mainJob) fields.push({label:'主业', text:ui.mainJob});
+    if (ui.sideJob) fields.push({label:'副业', text:ui.sideJob});
+    if (ui.interests) fields.push({label:'兴趣', text:ui.interests});
+
+    fields.forEach(f => {
+      const fText = f.text;
+      let bestWx = '', bestScore = 0;
+      WUXING_LIST.forEach(wx => {
+        const kws = wxKeywords[wx]||[];
+        let score = 0;
+        kws.forEach(kw => { if (fText.includes(kw)) score++; });
+        if (score > bestScore) { bestScore = score; bestWx = wx; }
+      });
+      if (bestWx) {
+        const isYongShen = (bestWx === ys);
+        const isRiZhu = (bestWx === dw);
+        let rating = '';
+        if (isYongShen && isRiZhu) rating = '极佳匹配 ✦✦✦';
+        else if (isYongShen) rating = '很好匹配 ✦✦';
+        else if (isRiZhu) rating = '较好匹配 ✦';
+        else rating = '一般匹配';
+
+        match += '<p><strong>'+f.label+'「'+fText+'」</strong>：主要属<strong>'+bestWx+'</strong>行，与你的用神「'+ys+'」'+(isYongShen?'一致':'不一致')+'，与日主「'+dw+'」'+(isRiZhu?'同类':'异类')+'—— <strong>'+rating+'</strong></p>';
+      } else {
+        match += '<p><strong>'+f.label+'「'+fText+'」</strong>：行业属性未明确匹配，建议参考用神方向优化</p>';
+      }
+    });
+
+    // 十神路径建议
+    if (isShiShang) match += '<p>你的月令透食伤（'+ms+'），天生适合<strong>创意输出、内容创作、技能服务</strong>类路径——把专业技能转化为产品和内容，是最符合你命局的变现方式。</p>';
+    else if (isYinXing) match += '<p>你的月令透印星（'+ms+'），适合<strong>学术研究、知识体系搭建、专业背书</strong>类路径——深耕专业深度，靠专业权威立足。</p>';
+    else if (isGuanSha) match += '<p>你的月令透官杀（'+ms+'），适合<strong>组织管理、制度执行、合规方向</strong>类路径——在体系中晋升是最佳路线。</p>';
+    else if (isCaiXing) match += '<p>你的月令透财星（'+ms+'），适合<strong>商业运营、投资理财、资源整合</strong>类路径——善用资金和资源创造更大价值。</p>';
+    else if (isBiJie) match += '<p>你的月令透比劫（'+ms+'），适合<strong>合作创业、团队运营、竞争性行业</strong>类路径——与人合作比单打独斗更容易成功。</p>';
+  }
+
+  let advice = '';
+  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+  if (ms==='食神'||ms==='伤官') advice='你的月令透食伤（'+ms+'），天生适合创意输出、内容创作、教育培训类工作。建议加强内容创作能力，发展可以输出专业知识的领域。';
+  else if (ms==='正印'||ms==='偏印') advice='你的月令透印星，适合学术、研究、幕后策划类工作。建议深耕专业领域，建立知识壁垒。';
+  else advice='根据你的八字，建议优先发展与'+ys+'属性相关的行业，同时注意发挥你原有的优势领域。';
+
+  return match+'<h3>用神「'+ys+'」推荐行业</h3><p>'+rec.map(i=>'<span class="tag-pill tag-accent">'+i+'</span>').join(' ')+'</p><h3>日主「'+dw+'」相关行业</h3><p>'+dwi.map(i=>'<span class="tag-pill tag-gold">'+i+'</span>').join(' ')+'</p><h3>具体建议</h3><p>'+advice+'</p>';
+}
+
+// 判断用户是否真正填写了有意义的内容（排除"无""没有""暂无"等否定词）
+function isValidInput(text) {
+  if (!text || !text.trim()) return false;
+  const neg = ['无','没有','暂无','不','否','没','×','x','X','/','—','--','none','n/a','na','no'];
+  const t = text.trim().toLowerCase();
+  for (const n of neg) { if (t === n || t === n+'。' || t === n+' ') return false; }
+  return true;
+}
+
+function genSideJobAnalysis(bazi, an, ui) {
+  const ys = an.yongShen, dw = GAN_WUXING[bazi.day.ganIdx];
+  const ms = getShishen(bazi.day.ganIdx, bazi.month.ganIdx);
+
+  // 收集有效输入
+  const items = [];
+  if (isValidInput(ui.sideJob)) items.push({label:'副业', text:ui.sideJob.trim()});
+  if (isValidInput(ui.interests)) items.push({label:'兴趣方向', text:ui.interests.trim()});
+  if (items.length === 0) return ''; // 没有有效输入则不生成此板块
+
+  // 五行-行业关键词映射（与genIndustry共享逻辑）
+  const wxKeywords = {
+    '木':['教育','培训','文化','出版','文创','写作','设计','园林','环保','健康','养生','服装','纺织','草药','中医','植物','木','书法','绘画','花艺','茶道','自然','有机','阅读','书'],
+    '火':['媒体','广告','影视','娱乐','直播','互联网','餐饮','能源','光电','心理','塔罗','占卜','神秘','表演','美容','化妆','摄影','烟火','电','光','热','占星','灵性','通灵','占','卜','演','唱','舞','戏','播','主播','网红','灯光','烘焙','烹饪','美食'],
+    '土':['房地产','建筑','农业','矿业','保险','咨询','行政','管理','仓储','物流','宠物','畜牧','地产','矿产','土','石','陶','种植','园艺','收纳','整理','手工','陶艺','泥塑','收藏','古董','考古'],
+    '金':['金融','银行','证券','法律','机械','制造','珠宝','金属','财务','会计','审计','军警','外科','刀','金','银','铁','钱','投资','理财','交易','编程','代码','技术','工程','精密','钟表','乐器'],
+    '水':['贸易','物流','旅游','航运','水产','酒类','IT','咨询','传播','通讯','水利','饮料','酒','茶','水','海洋','鱼','写作','翻译','语言','外语','英语','交流','沟通','演讲','谈判','航海','游泳','潜水','渔业']
+  };
+
+  // 五行健康属性（用于养老阶段建议）
+  const wxHealth = {'木':'肝胆、眼睛，宜多亲近绿色、户外活动','火':'心脏、血液循环，宜保持心情愉悦、适度运动','土':'脾胃、消化系统，宜饮食规律、避免过度思虑','金':'肺、呼吸系统、皮肤，宜注意空气质量、适度锻炼','水':'肾脏、泌尿系统，宜注意保暖、充足睡眠'};
+
+  let h = '';
+
+  items.forEach(item => {
+    const fText = item.text;
+    let bestWx = '', bestScore = 0;
+    WUXING_LIST.forEach(wx => {
+      const kws = wxKeywords[wx]||[];
+      let score = 0;
+      kws.forEach(kw => { if (fText.includes(kw)) score++; });
+      if (score > bestScore) { bestScore = score; bestWx = wx; }
+    });
+
+    h += '<h3>'+item.label+'「'+fText+'」八字分析</h3>';
+
+    if (bestWx && bestScore > 0) {
+      const isYongShen = (bestWx === ys);
+      const isJiShen = (bestWx === an.jiShen);
+      const isRiZhu = (bestWx === dw);
+
+      // 匹配度评级
+      let rating, ratingColor, ratingDesc;
+      if (isYongShen && isRiZhu) {
+        rating = '极佳'; ratingColor = '#4CAF50'; ratingDesc = '与你的用神和日主完全吻合，是命局中最适合深耕的方向';
+      } else if (isYongShen) {
+        rating = '很好'; ratingColor = '#8BC34A'; ratingDesc = '与你的用神属性一致，有利于命局平衡，是值得投入的方向';
+      } else if (isRiZhu) {
+        rating = '较好'; ratingColor = '#FFC107'; ratingDesc = '与你的日主属性同类，做起来会比较顺手，但要注意是否真正补益命局';
+      } else if (isJiShen) {
+        rating = '需谨慎'; ratingColor = '#F44336'; ratingDesc = '与你的忌神属性相同，可能会消耗你的精力或带来额外压力';
+      } else {
+        rating = '中性'; ratingColor = '#FF9800'; ratingDesc = '与用神/忌神均无直接关联，可以作为辅助方向，但不宜过度投入';
+      }
+
+      h += '<p>「'+fText+'」主要属<strong style="color:'+ratingColor+'">'+bestWx+'</strong>行，与你的用神「'+ys+'」'+(isYongShen?'<strong style="color:#4CAF50">一致</strong>':isJiShen?'<strong style="color:#F44336">相冲（忌神）</strong>':'不一致')+'，与日主「'+dw+'」'+(isRiZhu?'同类':'异类')+'。</p>';
+      h += '<p>匹配度：<strong style="color:'+ratingColor+'">'+rating+'</strong>——'+ratingDesc+'。</p>';
+
+      // 是否建议深入研究
+      h += '<h4>是否建议深入研究？</h4>';
+      if (isYongShen) {
+        h += '<p style="color:#4CAF50">✦ <strong>强烈建议深入研究。</strong>这个方向与你的用神高度契合，深耕此领域能够有效补益命局，越投入越顺遂。建议系统学习、积累专业深度，将其发展为核心竞争力。</p>';
+        if (item.label === '副业') {
+          h += '<p>作为副业，'+bestWx+'属性的方向与你的命局天然契合，值得加大投入力度。可以考虑从兴趣型副业向专业型副业转型，提升变现能力。</p>';
+        } else if (item.label === '兴趣方向') {
+          h += '<p>这个兴趣方向不仅是爱好，更是你命局的"补药"。建议从随性探索转为系统学习，未来有机会将其发展为副业甚至主业。</p>';
+        }
+      } else if (isJiShen) {
+        h += '<p style="color:#F44336">⚠ <strong>建议适度克制。</strong>这个方向属于你的忌神属性，过度投入容易消耗精力、增加压力。如果必须从事，建议控制时间比例，同时通过'+ys+'属性的活动来平衡。</p>';
+        if (item.label === '副业') {
+          h += '<p>作为副业，这个方向可能会在主业繁忙时加重负担。建议评估投入产出比，如果确实需要维持，尽量减少花在上面的时间。</p>';
+        } else if (item.label === '兴趣方向') {
+          h += '<p>作为兴趣爱好偶尔接触没问题，但不宜投入过多时间和精力。可以将其作为消遣，优先把时间分配给与你命局更匹配的方向。</p>';
+        }
+      } else if (isRiZhu) {
+        h += '<p style="color:#FFC107">○ <strong>可以适度发展。</strong>这个方向与你的日主同类，做起来会比较顺手自然。但因为是中性匹配，不一定能从根本上补益命局，建议作为辅助方向，不要投入过多资源。</p>';
+        if (item.label === '兴趣方向') {
+          h += '<p>作为兴趣可以放松身心，但如果想深入研究，建议结合用神「'+ys+'」属性的方向一起发展，效果更佳。</p>';
+        }
+      } else {
+        h += '<p style="color:#FF9800">△ <strong>可以尝试，但不是最优选择。</strong>这个方向与你的用神/忌神都不直接相关，属于中性领域。如果确实感兴趣，可以作为辅助方向发展，同时建议关注与用神「'+ys+'」更匹配的领域。</p>';
+      }
+
+      // 十神路径补充
+      if (ms==='食神'||ms==='伤官') {
+        h += '<p>你的月令透食伤（'+ms+'），天生适合将兴趣和技能转化为可输出的内容或服务——<strong>把爱好变成产品</strong>是你最自然的变现路径。</p>';
+      } else if (ms==='正印'||ms==='偏印') {
+        h += '<p>你的月令透印星（'+ms+'），适合将兴趣发展为<strong>系统化的知识体系</strong>——深入学习、建立专业壁垒比快速变现更重要。</p>';
+      }
+
+    } else {
+      // 无法匹配五行关键词
+      h += '<p>「'+fText+'」的行业属性暂无法自动匹配五行，但根据你的八字用神「'+ys+'」，建议优先发展与'+ys+'属性相关的领域。</p>';
+      h += '<p>如果你的'+item.label+'涉及'+ys+'属性（'+getWuxingDesc(ys)+'）的元素，则与命局较为契合，值得深入。</p>';
+    }
+  });
+
+  return h;
+}
+
+function genCareerPlan(bazi, dr, ui) {
+  const cy = new Date().getFullYear(), by = ui.year;
+  let h = '<h3>大运人生趋势</h3>';
+
+  // 根据年龄段和十神生成不同描述
+  function getDayunDesc(shishen, ageStart, ageEnd) {
+    const isStudy = ageEnd <= 19;       // 学习阶段
+    const isRetire = ageStart >= 60;    // 养老阶段
+    const isEarlyCareer = ageStart >= 20 && ageEnd <= 29; // 职业初期
+    const isMidCareer = ageStart >= 30 && ageEnd <= 59;   // 职业中期
+
+    if (isStudy) {
+      const studyAdvice = {
+        '食神':'学习阶段思维活跃，好奇心强，适合广泛涉猎、培养兴趣。学业上表达能力突出，文科类表现较佳。',
+        '伤官':'学习阶段思维活跃，好奇心强，适合广泛涉猎、培养兴趣。学业上表达能力突出，但需注意与师长相处方式。',
+        '正财':'学习阶段踏实认真，适合打好基础。学业表现稳定，可以适当培养理财意识。',
+        '偏财':'学习阶段兴趣广泛，适合多元发展。学业上机灵，但需专注力。',
+        '正官':'学习阶段自律性强，适合在规范的教育体系中发展。学业表现良好，但压力可能较大。',
+        '七杀':'学习阶段压力较大，但也是磨练意志的时期。学业上竞争意识强，需注意情绪管理。',
+        '正印':'学习阶段记忆力好、理解力强，是打知识底子的好时期。适合深造、广泛阅读。',
+        '偏印':'学习阶段领悟力强，适合钻研感兴趣的领域。学业上偏科倾向明显，可深耕特长。',
+        '比肩':'学习阶段同辈竞争明显，适合与同学共同进步。社交能力强，需平衡学业与社交。',
+        '劫财':'学习阶段竞争意识强，适合设定明确的学习目标。需注意专注自身成长，避免与人攀比。'
+      };
+      return studyAdvice[shishen] || '学习阶段，注重打好基础，培养良好学习习惯。';
+    }
+
+    if (isRetire) {
+      const retireAdvice = {
+        '食神':'养老阶段适合发展兴趣爱好、修身养性。保持身心愉悦，适度社交，享受生活。',
+        '伤官':'养老阶段表达欲仍强，适合写作、教学分享经验。注意控制情绪波动，保持心态平和。',
+        '正财':'养老阶段财务稳定，适合享受劳动成果。注意合理消费，做好资产传承规划。',
+        '偏财':'养老阶段仍有财运机遇，可适度理财，但不宜冒险投资。注意保管好积蓄。',
+        '正官':'养老阶段仍关注秩序与责任，适合参与社区事务或指导后辈。注意放权，不必事事操心。',
+        '七杀':'养老阶段内心仍不服老，但需注意身体不可硬撑。适当放慢节奏，听从医嘱。',
+        '正印':'养老阶段心胸豁达，适合读书、养花、修身养性。精神世界丰富，身体健康需关注。',
+        '偏印':'养老阶段思维独特，适合钻研感兴趣的小众领域。注意饮食作息规律，不可过于任性。',
+        '比肩':'养老阶段社交活跃，与同龄人来往频繁。注意量力而行，不宜过度操劳。',
+        '劫财':'养老阶段仍有好胜心，需注意放平心态。关注身体健康，定期体检，不宜过度消耗。'
+      };
+      return retireAdvice[shishen] || '养老阶段，注重身心健康，保持生活节奏。';
+    }
+
+    // 职业期（含早期和中期）
+    const careerAdvice = {
+      '食神': isEarlyCareer
+        ? '职业初期创意和表达能力增强，适合探索感兴趣的领域，发展内容创作或副业。'
+        : '此十年食伤旺，创意和表达能力增强，适合发展内容创作、副业拓展。',
+      '伤官': isEarlyCareer
+        ? '职业初期创意十足，适合创新类工作，但需注意职场人际关系。'
+        : '此十年食伤旺，创意和表达能力增强，适合发展内容创作、副业拓展。但需注意与上级相处方式。',
+      '正财': isEarlyCareer
+        ? '职业初期财运初开，适合踏实积累经验和人脉，稳步提升收入。'
+        : '此十年财星旺，财运较好，适合投资、拓展收入来源。',
+      '偏财': isEarlyCareer
+        ? '职业初期机遇较多，适合多尝试不同方向，发现最适合自己的赛道。'
+        : '此十年财星旺，财运较好，适合投资、拓展收入来源。',
+      '正官': isEarlyCareer
+        ? '职业初期压力较大，但也是快速成长的时期。适合在规范的企业中积累经验。'
+        : '此十年官杀旺，事业压力增大，但也是晋升机会。',
+      '七杀': isEarlyCareer
+        ? '职业初期竞争激烈，需磨练抗压能力。适合有挑战性的岗位，成长空间大。'
+        : '此十年官杀旺，事业压力增大，但也是晋升机会。需注意健康和情绪管理。',
+      '正印': isEarlyCareer
+        ? '职业初期学习能力强，适合深造、考证、打好专业基础。厚积薄发，不必急于求成。'
+        : '此十年印星旺，学习和积累的好时期。适合深造、考证、提升专业能力。',
+      '偏印': isEarlyCareer
+        ? '职业初期领悟力强，适合钻研专业技能。可能兴趣偏门，但正是差异化竞争力。'
+        : '此十年印星旺，学习和积累的好时期。适合深造、考证、提升专业能力。',
+      '比肩': isEarlyCareer
+        ? '职业初期同行竞争多，适合抱团发展、建立人脉网络。'
+        : '此十年比劫旺，竞争增多，但也是合作机会。',
+      '劫财': isEarlyCareer
+        ? '职业初期竞争意识强，适合设定明确的职业目标。注意控制消费，做好储蓄。'
+        : '此十年比劫旺，竞争增多，但也是合作机会。注意理财，避免冲动消费。'
+    };
+    return careerAdvice[shishen] || '整体平稳发展。';
+  }
+
+  // 根据十神和性别生成婚恋提示（20~49岁适用）
+  function getDayunLoveDesc(shishen, ageStart, ageEnd, gender, ori) {
+    // 只在20~49岁之间显示婚恋提示
+    if (ageEnd < 20 || ageStart > 49) return '';
+    const isMale = gender === '男';
+    const isFemale = gender === '女';
+    const targetMale = (isFemale && ori === '男') || (isMale && ori === '男') || ori === '均可';
+    const targetFemale = (isMale && ori === '女') || (isFemale && ori === '女') || ori === '均可';
+
+    // 根据十神+性别组合给出婚恋提示
+    const loveAdvice = {
+      '食神': {
+        '男': '个人魅力提升，表达力强，容易吸引异性。适合主动社交，拓展社交圈。',
+        '女': '个人魅力提升，表达力强，容易吸引异性关注。但食伤过旺可能克制夫星，已婚者注意给伴侣空间，单身者则可积极社交。'
+      },
+      '伤官': {
+        '男': '表达欲和个性强烈，容易成为人群焦点，异性缘增强。但注意言辞锋利可能伤人。',
+        '女': '个性鲜明，魅力突出，但食伤克官杀，感情上容易对伴侣挑剔不满。单身者桃花运旺但感情不稳，已婚者需注意沟通方式。'
+      },
+      '正财': {
+        '男': '财星代表妻星，此十年婚恋机会最强。单身者很可能遇到合适的伴侣，已婚者夫妻感情融洽。',
+        '女': '财运较好，生活安稳，感情上也有稳定发展的基础。适合认真经营一段关系。'
+      },
+      '偏财': {
+        '男': '偏财为偏妻星，异性缘旺，但感情可能不专一。单身者机遇多但需认真筛选，已婚者注意保持分寸。',
+        '女': '财运活跃，社交场合多，容易结识新朋友。感情上机遇增加，但需擦亮眼睛。'
+      },
+      '正官': {
+        '男': '事业压力增大，可能因工作繁忙而忽视感情。建议在忙碌中留出时间给伴侣或主动社交。',
+        '女': '正官为夫星，此十年婚恋机会最强。单身者很可能遇到正缘，恋爱中者适合确定关系，已婚者需注意与丈夫的沟通。'
+      },
+      '七杀': {
+        '男': '事业压力大，情绪波动可能影响感情。需注意把工作压力和感情分开，避免对伴侣发脾气。',
+        '女': '七杀为偏夫星，感情上容易遇到强势或有挑战性的对象。单身者可能被有个性的人吸引，已婚者需注意婚姻中的权力平衡。'
+      },
+      '正印': {
+        '男': '此十年学习运好，适合深造和提升自我。感情上相对平稳，可能通过学习或长辈介绍结识对象。',
+        '女': '印星护身，感情上容易遇到体贴照顾自己的对象。学习运佳，适合在自我提升的同时发展感情。已婚者家庭温馨。'
+      },
+      '偏印': {
+        '男': '此十年思维独特，适合钻研专业。感情上可能比较内敛，需主动创造社交机会。',
+        '女': '偏印旺则可能想法较多但行动不足，感情上容易犹豫不决。建议遇心动对象时勇敢迈步，已婚者注意不要过度猜疑。'
+      },
+      '比肩': {
+        '男': '社交活跃，同辈朋友增多，可能通过朋友圈结识异性。但需注意竞争——可能遇到情敌。',
+        '女': '社交活跃，但比肩争夫，感情上可能有竞争对手。单身者需主动出击，已婚者注意维护夫妻关系。'
+      },
+      '劫财': {
+        '男': '劫财争财（妻星），感情上需防第三者介入。单身者竞争激烈，已婚者需多花时间陪伴伴侣。',
+        '女': '社交活跃但竞争明显，感情上容易遇到情敌或三角关系。保持自信和独立是最佳策略。'
+      }
+    };
+
+    const advice = loveAdvice[shishen];
+    if (!advice) return '';
+    const genderKey = isMale ? '男' : '女';
+    let desc = advice[genderKey] || '';
+
+    // 根据年龄段补充侧重点
+    if (ageStart >= 20 && ageEnd <= 29) {
+      desc += ' 此为婚恋探索期，多接触不同的人，了解自己真正想要的伴侣类型。';
+    } else if (ageStart >= 30 && ageEnd <= 39) {
+      desc += ' 此为婚恋关键期，如已有稳定对象建议把握时机推进，单身者应主动创造机会。';
+    } else if (ageStart >= 40) {
+      desc += ' 此阶段婚恋以经营为主，重在维护和深化现有关系。';
+    }
+
+    return desc;
+  }
+
+  dr.dayun.forEach(dy => {
+    const sy = by+dy.ageStart, ey = by+dy.ageEnd;
+    const ic = cy>=sy && cy<=ey;
+    const phaseLabel = dy.ageEnd<=19 ? '【学习期】' : dy.ageStart>=60 ? '【养老期】' : '';
+    const mainDesc = getDayunDesc(dy.shishen, dy.ageStart, dy.ageEnd);
+    const loveDesc = getDayunLoveDesc(dy.shishen, dy.ageStart, dy.ageEnd, ui.gender, ui.sexualOrientation);
+    let cardContent = '<p style="margin-top:8px;">'+mainDesc+'</p>';
+    if (loveDesc) {
+      cardContent += '<div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);"><span style="font-size:12px;color:var(--accent);font-weight:500;">💕 婚恋提示</span><p style="margin-top:4px;font-size:13px;color:var(--text-secondary);line-height:1.7;">'+loveDesc+'</p></div>';
+    }
+    h += '<div class="card" style="'+(ic?'border-color:var(--accent)':'')+'"><div style="font-size:15px;font-weight:600;color:'+(ic?'var(--accent)':'var(--text-primary)')+';">'+dy.ganzhi+'大运（'+sy+'-'+ey+'，'+dy.ageStart+'-'+dy.ageEnd+'岁）'+phaseLabel+(ic?' ← 当前':'')+'</div>'+cardContent+'</div>';
+  });
+
+  h += '<h3>未来10年关键节点</h3><ul>';
+  // 未来10年也根据当前年龄给出不同侧重点
+  const currentAge = cy - by;
+  const lnAdvice = {'食神':'创意表达力强，适合推出新内容/新产品，副业有突破机会','伤官':'创意表达力强，适合推出新内容/新产品，副业有突破机会','正财':'财运较好，适合理财投资，副业收入有望提升','偏财':'财运较好，适合理财投资，副业收入有望提升','正官':'事业有变动机会，但压力也大，注意处理好与上级关系','七杀':'事业有变动机会，但压力也大，注意处理好与上级关系','正印':'学习运佳，适合考证、进修，提升专业背书','偏印':'学习运佳，适合考证、进修，提升专业背书','比肩':'合作机会多，但竞争也激烈，注意人脉维护','劫财':'合作机会多，但竞争也激烈，注意人脉维护'};
+  for (let y=cy; y<=cy+9; y++) { const ln=getLiunian(y); const ls=getShishen(bazi.day.ganIdx,ln.ganIdx); const futureAge = y - by; const phaseTag = futureAge<=19?'【学习】':futureAge>=60?'【养老】':''; if(lnAdvice[ls]) h+='<li><strong>'+y+'年</strong>（'+futureAge+'岁）'+phaseTag+'：'+lnAdvice[ls]+'</li>'; }
+  h += '</ul>';
+  return h;
+}
+
+function genMarriage(bazi, dr, ui) {
+  const dz = bazi.day.zhi, dzc = CANG_GAN[dz]||[];
+  const dzw = dzc.length>0 ? GAN_WUXING[TIAN_GAN.indexOf(dzc[0].g)] : '土';
+  const ms = ui.marriageStatus || '单身';
+  const ori = ui.sexualOrientation || '均可';
+  const targetLabel = ori === '男' ? '男性' : ori === '女' ? '女性' : '任何性别';
+
+  let h = '<h3>配偶特征分析</h3><p>日支（配偶宫）为 <strong>'+dz+'</strong>（'+dzw+'），配偶宫五行属'+dzw+'。';
+  if ('子午卯酉'.includes(dz)) h+='日支为四正位，'+targetLabel+'配偶外貌较好，性格鲜明。';
+  else if ('寅申巳亥'.includes(dz)) h+='日支为四生位，'+targetLabel+'配偶性格活泼，有行动力。';
+  else h+='日支为四库位，'+targetLabel+'配偶性格稳重，家庭观念强。';
+  h += '</p>';
+
+  // 配偶五行特征
+  const spouseWxMap = {'木':'对方可能身材修长，面容清秀，性格温和有朝气','火':'对方可能面色红润，性格热情开朗，表达力强','土':'对方可能体格敦实，性格沉稳踏实，重家庭','金':'对方可能面容棱角分明，性格果断干练，讲原则','水':'对方可能体态灵活，聪明善变，善交际'};
+  h += '<p>根据配偶宫五行，' + (spouseWxMap[dzw]||'') + '。</p>';
+
+  // 婚恋时机分析
+  h += '<h3>婚恋时机分析</h3>';
+  const cy = new Date().getFullYear();
+  const isSeeking = (ms === '单身' || ms === '离异');
+  const inRelation = (ms === '恋爱中');
+  const isMarried = (ms === '已婚');
+
+  if (isSeeking) {
+    h += '<p>你目前' + ms + '，以下年份婚恋机会较突出，适合主动把握：</p><ul>';
+    for (let y=cy; y<=cy+9; y++) {
+      const ln=getLiunian(y), ls=getShishen(bazi.day.ganIdx,ln.ganIdx);
+      if (ui.gender==='女' && ori!=='男') {
+        // 非传统异性取向：用食伤/财星看感情
+        if (ls==='食神'||ls==='伤官') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：食伤年，个人魅力突出，表达力强，容易吸引'+targetLabel+'伴侣</li>';
+        else if (ls==='正财'||ls==='偏财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：财星年，感情运势较好，有望遇到心仪的'+targetLabel+'</li>';
+      } else if (ui.gender==='男' && ori!=='女') {
+        if (ls==='食神'||ls==='伤官') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：食伤年，个人魅力突出，表达力强，容易吸引'+targetLabel+'伴侣</li>';
+        else if (ls==='正财'||ls==='偏财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：财星年，感情运势较好，有望遇到心仪的'+targetLabel+'</li>';
+      } else {
+        if (ui.gender==='女') {
+          if (ls==='正官'||ls==='七杀') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：遇官杀，婚恋机会较强，适合主动把握</li>';
+          else if (ls==='正财'||ls==='偏财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：遇财星，感情运势较好</li>';
+        } else {
+          if (ls==='正财'||ls==='偏财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：遇财星，婚恋机会较强，适合主动把握</li>';
+          else if (ls==='食神'||ls==='伤官') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：食伤年，个人魅力强，容易吸引异性</li>';
+        }
+      }
+      if (ls==='食神'||ls==='伤官') {
+        // 补充：食伤年注意情绪
+      }
+    }
+    h += '</ul>';
+  } else if (inRelation) {
+    h += '<p>你目前处于恋爱中，以下年份适合推进关系或做重要决定：</p><ul>';
+    for (let y=cy; y<=cy+9; y++) {
+      const ln=getLiunian(y), ls=getShishen(bazi.day.ganIdx,ln.ganIdx);
+      if (ls==='正官'||ls==='七杀'||ls==='正财'||ls==='偏财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：感情关键年，适合确定关系或推进到下一阶段</li>';
+      else if (ls==='比肩'||ls==='劫财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：比劫年，需注意感情中的竞争或第三者干扰</li>';
+      else if (ls==='食神'||ls==='伤官') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：食伤年，表达欲强，注意沟通方式，避免口舌</li>';
+    }
+    h += '</ul>';
+  } else if (isMarried) {
+    h += '<p>你目前已婚，以下年份需要特别关注婚姻经营：</p><ul>';
+    for (let y=cy; y<=cy+9; y++) {
+      const ln=getLiunian(y), ls=getShishen(bazi.day.ganIdx,ln.ganIdx);
+      if (ls==='比肩'||ls==='劫财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：比劫年，注意婚姻中的外部干扰，加强沟通</li>';
+      else if (ls==='食神'||ls==='伤官') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：食伤年，注意情绪管理，避免因表达不当伤害对方</li>';
+      else if (ls==='正财'||ls==='偏财') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：财星年，夫妻共同理财，财运较好</li>';
+      else if (ls==='正印'||ls==='偏印') h+='<li><strong>'+y+'年</strong>（'+ln.gan+ln.zhi+'）：印星年，家庭温馨，适合添丁或家庭建设</li>';
+    }
+    h += '</ul>';
+  }
+
+  // 婚恋建议
+  h += '<h3>婚恋建议</h3><p>';
+  const ys=getShishen(bazi.day.ganIdx,bazi.year.ganIdx), yss=getShishen(bazi.day.ganIdx,bazi.month.ganIdx), hss=getShishen(bazi.day.ganIdx,bazi.hour.ganIdx);
+
+  if (ms === '单身') {
+    if (ui.gender==='女' && ori==='男') {
+      const hzg=[ys,yss,hss].includes('正官'), hqs=[ys,yss,hss].includes('七杀');
+      if (hzg&&hqs) h+='你八字中官杀混杂，感情路上容易遇到多个选择或复杂情况，建议宁缺毋滥，认真考察对方后再做决定。';
+      else if (hzg) h+='你八字中正官透出，天生对感情认真负责，适合稳定长久的关系。';
+      else h+='你八字中官星不显，对感情相对独立，不容易被传统关系束缚，建议主动创造社交机会。';
+    } else if (ui.gender==='男' && ori==='女') {
+      const hzc=[ys,yss,hss].includes('正财'), hpc=[ys,yss,hss].includes('偏财');
+      if (hzc&&hpc) h+='你八字中正偏财混杂，异性缘较好但也容易感情纠葛，建议明确自己的择偶标准。';
+      else if (hzc) h+='你八字中正财透出，对感情专一，适合稳定长久的关系。';
+      else h+='你八字中财星不显，对感情相对理性，建议多参加社交活动拓展人脉。';
+    } else {
+      h+='你的性取向偏好' + targetLabel + '，在八字中，无论取向如何，日支和食伤星都指向你的亲密关系模式。';
+      if ([ys,yss,hss].includes('食神')||[ys,yss,hss].includes('伤官')) h+='你食伤透出，表达力和感染力强，容易吸引志同道合的伴侣。';
+      else h+='建议在社交中展现真实的自己，用你的独特魅力吸引对的人。';
+    }
+    h+='作为单身状态，建议在2026-2028年把握好婚恋机会，多参与'+an.yongShen+'属性的活动和社交场合。';
+  } else if (ms === '恋爱中') {
+    h+='你目前处于恋爱中，这是探索和加深了解的阶段。';
+    if (ui.gender==='女') {
+      if ([ys,yss,hss].includes('正官')) h+='你八字正官透出，对感情有承诺意识，适合认真经营当前关系。';
+      else if ([ys,yss,hss].includes('七杀')) h+='你八字七杀透出，感情中容易有强烈的吸引力但也可能有冲突，建议保持理性沟通。';
+    } else {
+      if ([ys,yss,hss].includes('正财')) h+='你八字正财透出，对感情认真负责，适合长期发展。';
+    }
+    h+='建议在关系稳定的基础上，逐步深入沟通，明确双方对未来的期待。';
+  } else if (ms === '已婚') {
+    h+='你目前已婚，婚姻需要持续经营。';
+    if ([ys,yss,hss].includes('比肩')||[ys,yss,hss].includes('劫财')) h+='你八字比劫较旺，婚后需注意与伴侣的边界感和信任建设，避免外部因素干扰。';
+    else if ([ys,yss,hss].includes('食神')||[ys,yss,hss].includes('伤官')) h+='你八字食伤较旺，表达能力强，婚姻中要注意倾听对方的需求，避免过于自我表达而忽略对方感受。';
+    h+='建议在日常生活中保持'+an.yongShen+'属性的活动，增进夫妻感情。';
+  } else if (ms === '离异') {
+    h+='你目前处于离异状态，无论过去经历了什么，都是重新出发的机会。';
+    if (ui.gender==='女' && ori==='男') {
+      if ([ys,yss,hss].includes('正官')) h+='你八字正官透出，天生重视稳定关系，再婚机会较好。';
+      else if ([ys,yss,hss].includes('七杀')) h+='你八字七杀透出，感情中容易遇到强势对象，再婚时建议多观察对方性格。';
+    } else if (ui.gender==='男' && ori==='女') {
+      if ([ys,yss,hss].includes('正财')) h+='你八字正财透出，重视稳定关系，再婚机会较好。';
+    } else {
+      h+='无论取向如何，重新开始需要勇气。';
+      if ([ys,yss,hss].includes('食神')||[ys,yss,hss].includes('伤官')) h+='你食伤透出，个人魅力不减，容易吸引新的伴侣。';
+    }
+    h+='建议先调整好自身状态，待'+an.yongShen+'属性流年到来时再积极把握新机会。';
+  }
+
+  // 性取向补充说明
+  if (ori === '均可') {
+    h += '</p><h3>双性取向提示</h3><p>你的取向为"均可"，意味着你在感情中更看重灵魂契合而非性别。八字中，日支（配偶宫）反映的是你最深层的亲密关系需求，无论对方性别如何，'+dzw+'属性的特质都是你的核心吸引点。建议关注'+targetLabel+'中具有'+dzw+'属性特质的人。';
+  }
+
+  h += '</p>';
+  return h;
+}
+
+function genAction2026(bazi, dr, ui, analysis) {
+  const ln2026=getLiunian(2026), ls=getShishen(bazi.day.ganIdx,ln2026.ganIdx);
+  const ms = ui.marriageStatus || '单身';
+  const ori = ui.sexualOrientation || '均可';
+  const ys = analysis.yongShen;
+
+  const acts = [];
+
+  // 事业类（基于主业）
+  if (ui.mainJob) {
+    acts.push({c:'事业',t:'梳理「'+ui.mainJob+'」的发展路径，明确年终目标与关键里程碑'});
+    acts.push({c:'事业',t:'在主业中寻找与用神「'+ys+'」属性结合的机会，提升职场竞争力'});
+  } else {
+    acts.push({c:'事业',t:'明确主业方向，优先发展与用神「'+ys+'」属性相关的领域'});
+  }
+
+  // 副业类（基于副业）
+  if (ui.sideJob) {
+    acts.push({c:'副业',t:'拓展「'+ui.sideJob+'」的客户/市场，制定月度收入增长目标'});
+    acts.push({c:'副业',t:'策划至少2次线下活动或合作，扩大「'+ui.sideJob+'」的影响力'});
+  } else {
+    acts.push({c:'副业',t:'考虑发展一项与用神「'+ys+'」属性匹配的副业，增加收入来源'});
+  }
+
+  // 内容/自媒体类（通用建议）
+  acts.push({c:'内容',t:'如有自媒体运营，保持稳定更新节奏，重点突破粉丝增长瓶颈'});
+
+  // 学习类（基于兴趣方向）
+  if (ui.interests) {
+    acts.push({c:'学习',t:'深入「'+ui.interests+'」的学习路径，每周至少投入3小时系统性学习'});
+  } else {
+    acts.push({c:'学习',t:'围绕用神「'+ys+'」属性方向制定学习计划，每周至少投入3小时'});
+  }
+
+  // 通用建议
+  acts.push({c:'健康',t:'注意用神「'+ys+'」属性的身体调理，保持规律作息和适度运动'});
+  acts.push({c:'人际',t:'2026年流年走'+ls+'，注意人际关系维护，避免口舌之争'});
+  acts.push({c:'财务',t:'制定2026年储蓄目标，副业/额外收入建议60%再投入（学习/设备/推广）'});
+
+  // 根据婚恋状态增加行动项
+  if (ms === '单身') {
+    acts.push({c:'婚恋',t:'主动拓展社交圈，多参加兴趣社群或线下活动，增加遇到合适'+(ori==='男'?'男性':ori==='女'?'女性':'伴侣')+'的机会'});
+    acts.push({c:'婚恋',t:'关注2026-2028年的感情窗口期，遇到心动对象时勇敢迈出第一步'});
+  } else if (ms === '恋爱中') {
+    acts.push({c:'婚恋',t:'与伴侣深入沟通未来规划，明确双方对婚姻的期待和时间表'});
+    acts.push({c:'婚恋',t:'安排高质量的约会时间，在忙碌的工作中保持感情温度'});
+  } else if (ms === '已婚') {
+    acts.push({c:'婚恋',t:'与伴侣共同制定年度家庭计划，保持定期深度沟通'});
+    acts.push({c:'婚恋',t:'关注配偶的情绪需求，在事业和副业繁忙中留出二人世界时间'});
+  } else if (ms === '离异') {
+    acts.push({c:'婚恋',t:'给自己充分的疗愈时间，先完成自我成长再考虑新关系'});
+    acts.push({c:'婚恋',t:'反思上一段关系的模式，避免重复同样的感情困局'});
+  }
+
+  let h = '<div class="action-list">';
+  acts.forEach((a,i) => { h+='<div class="action-item"><div class="action-check" onclick="toggleCheck(this,'+i+')" id="check-'+i+'"></div><div class="action-text" id="text-'+i+'">'+a.t+'</div><div class="action-category">'+a.c+'</div></div>'; });
+  h += '</div><p style="margin-top:16px;font-size:13px;color:var(--text-muted);">2026年流年：'+ln2026.gan+ln2026.zhi+'（'+ls+'），整体'+(ls==='正财'||ls==='偏财'?'财运不错，适合拓展收入':ls==='食神'||ls==='伤官'?'创意表达力强，适合内容输出':'平稳发展，重在积累')+'。当前婚恋状态：'+ms+(ori?'，偏好：'+ori:'')+'。点击勾选可标记完成。</p>';
+  return h;
+}
+
+function toggleCheck(el, idx) { el.classList.toggle('checked'); const t=document.getElementById('text-'+idx); if(t) t.style.textDecoration=el.classList.contains('checked')?'line-through':'none'; el.textContent=el.classList.contains('checked')?'✓':''; }
+function goBack() { document.getElementById('result-area').classList.remove('show'); document.getElementById('result-area').innerHTML=''; document.getElementById('input-form').style.display='block'; }
+
+// ========== INIT ==========
+window.addEventListener('DOMContentLoaded', () => {
+  populateDateSelects();
+  // 实时显示出生城市经纬度
+  const birthCityInput = document.getElementById('birth-city');
+  birthCityInput.addEventListener('input', function() {
+    const coord = lookupCityCoord(this.value.trim());
+    document.getElementById('birth-coord-display').textContent = coord
+      ? '已匹配: ' + this.value.trim() + ' 经度 ' + coord.lng + '°, 纬度 ' + coord.lat + '°'
+      : this.value.trim() ? '未找到"' + this.value.trim() + '"的经纬度，使用默认东经120°' : '填写城市后自动匹配经纬度用于真太阳时修正';
+  });
+});
+</script>
+</body>
+</html>
