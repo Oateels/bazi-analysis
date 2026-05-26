@@ -295,7 +295,12 @@ function sunLongitude(JD) {
   return (L0 + C + 360) % 360;
 }
 
+// 节气计算缓存，避免同一年同一节气重复计算
+const _solarTermCache = {};
+
 function solarTermJD(year, angleDeg) {
+  const cacheKey = year + '_' + angleDeg;
+  if (_solarTermCache[cacheKey] !== undefined) return _solarTermCache[cacheKey];
   // Binary search: find JD when sun longitude reaches angleDeg
   const monthMap = {315:2,330:2,345:3,0:3,15:4,30:4,45:5,60:5,75:6,90:6,
     105:7,120:7,135:8,150:8,165:9,180:9,195:10,210:10,
@@ -309,7 +314,9 @@ function solarTermJD(year, angleDeg) {
     const diff = ((lon - angleDeg + 180) % 360) - 180;
     if (diff < 0) jdLow = jdMid; else jdHigh = jdMid;
   }
-  return (jdLow + jdHigh) / 2;
+  const result = (jdLow + jdHigh) / 2;
+  _solarTermCache[cacheKey] = result;
+  return result;
 }
 
 // ========== YEAR PILLAR ==========
@@ -332,10 +339,23 @@ function getMonthPillar(year, month, day, hour, minute) {
   const stAngles = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285];
   const stNames = ['寅','卯','辰','巳','午','未','申','酉','戌','亥','子','丑'];
   let monthZhiIdx = 0;
-  // 搜索当年所有节气，找到出生日之前最近的一个
-  for (let i = stAngles.length - 1; i >= 0; i--) {
+  // 从出生月附近开始搜索节气，减少不必要的 solarTermJD 调用
+  // 月份映射到节气索引：1月→10(丑), 2月→0(寅), ... 12月→9(亥)
+  const monthToStIdx = [10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const startIdx = monthToStIdx[month - 1] || 0;
+  // 先检查当前月对应的节气和前一个
+  for (let offset = 0; offset >= -2; offset--) {
+    const i = startIdx + offset;
+    if (i < 0 || i >= stAngles.length) continue;
     const stjd = solarTermJD(year, stAngles[i]);
     if (jd >= stjd) { monthZhiIdx = i; break; }
+  }
+  // 如果没找到，回退到完整搜索（从后往前）
+  if (monthZhiIdx === 0 && jd < solarTermJD(year, stAngles[startIdx])) {
+    for (let i = stAngles.length - 1; i >= 0; i--) {
+      const stjd = solarTermJD(year, stAngles[i]);
+      if (jd >= stjd) { monthZhiIdx = i; break; }
+    }
   }
   // 如果当年立春前出生，需要看上一年的小寒(285)之后
   const liChunJD = solarTermJD(year, 315);
@@ -438,11 +458,32 @@ function calculateDaYun(bazi, gender, birthYear, birthMonth, birthDay) {
   const birthJD = toJulianDay(birthYear, birthMonth, birthDay, 12);
   const stAngles = [315, 345, 15, 45, 75, 105, 135, 165, 195, 225, 255, 285];
   let prevJD = 0, nextJD = 0;
-  // 搜索当年所有节气
-  for (let i = 0; i < stAngles.length; i++) {
+  // 从出生月附近开始搜索节气，减少 solarTermJD 调用
+  const monthToStIdx = [10, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const startIdx = monthToStIdx[birthMonth - 1] || 0;
+  // 先搜索出生月附近的节气
+  for (let offset = 0; offset >= -startIdx; offset--) {
+    const i = startIdx - offset;
+    if (i < 0 || i >= stAngles.length) continue;
     const jd = solarTermJD(birthYear, stAngles[i]);
-    if (jd <= birthJD) prevJD = jd;
-    if (jd > birthJD && nextJD === 0) nextJD = jd;
+    if (jd <= birthJD) { prevJD = jd; break; }
+  }
+  for (let i = startIdx + 1; i < stAngles.length; i++) {
+    const jd = solarTermJD(birthYear, stAngles[i]);
+    if (jd > birthJD) { nextJD = jd; break; }
+  }
+  // 如果没找到，回退到完整搜索
+  if (prevJD === 0) {
+    for (let i = stAngles.length - 1; i >= 0; i--) {
+      const jd = solarTermJD(birthYear, stAngles[i]);
+      if (jd <= birthJD) { prevJD = jd; break; }
+    }
+  }
+  if (nextJD === 0) {
+    for (let i = 0; i < stAngles.length; i++) {
+      const jd = solarTermJD(birthYear, stAngles[i]);
+      if (jd > birthJD) { nextJD = jd; break; }
+    }
   }
   // 如果出生在立春前，还需搜索上一年的节气
   if (prevJD === 0) {
@@ -626,6 +667,8 @@ function populateDateSelects() {
 
 // ========== MAIN SUBMIT ==========
 function onSubmit() {
+  // 清空节气缓存，确保每次排盘数据正确
+  for (const key in _solarTermCache) delete _solarTermCache[key];
   const year = parseInt(document.getElementById('birth-year').value);
   const month = parseInt(document.getElementById('birth-month').value);
   const day = parseInt(document.getElementById('birth-day').value);
@@ -693,7 +736,7 @@ function renderResults(bazi, wuxingPower, analysis, dayunResult, ui) {
     '</div></div></div>' +
     '<div class="section fade-in"><div class="section-title">八字基本分析</div><div class="analysis-block">' + genBasicAnalysis(bazi, wuxingPower, analysis, ui) + '</div></div>' +
     '<div class="section fade-in"><div class="section-title">适合行业方向</div><div class="analysis-block">' + genIndustry(bazi, analysis, ui) + '</div></div>' +
-    (genSideJobAnalysis(bazi, analysis, ui) ? '<div class="section fade-in"><div class="section-title">副业/兴趣与八字分析</div><div class="analysis-block">' + genSideJobAnalysis(bazi, analysis, ui) + '</div></div>' : '') +
+    (function(){ const sja = genSideJobAnalysis(bazi, analysis, ui); return sja ? '<div class="section fade-in"><div class="section-title">副业/兴趣与八字分析</div><div class="analysis-block">' + sja + '</div></div>' : ''; })() +
     '<div class="section fade-in"><div class="section-title">未来10年职业规划</div><div class="analysis-block">' + genCareerPlan(bazi, dayunResult, ui) + '</div></div>' +
     '<div class="section fade-in"><div class="section-title">婚恋规划</div><div class="analysis-block">' + genMarriage(bazi, dayunResult, ui) + '</div></div>' +
     '<div class="section fade-in"><div class="section-title">2026年行动清单</div><div class="analysis-block">' + genAction2026(bazi, dayunResult, ui, analysis) + '</div></div>';
