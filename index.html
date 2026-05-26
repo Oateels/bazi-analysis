@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>八字排盘分析</title>
+<title>小鸟疗愈-八字排盘分析</title>
 <style>
 :root {
   --bg-primary: #0f0f14;
@@ -125,8 +125,8 @@ body {
 <body>
 <div class="container">
   <div class="header">
-    <h1>八字排盘分析</h1>
-    <p>输入出生信息，生成完整八字分析报告</p>
+    <h1>小鸟疗愈-八字排盘分析</h1>
+    <p>输入出生信息，生成八字分析报告及未来重要节点建议</p>
   </div>
 
   <!-- Input Form -->
@@ -235,6 +235,7 @@ body {
     </div>
 
     <button class="btn-submit" onclick="onSubmit()">开始排盘分析</button>
+    <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:12px;">如有疑问，请添加开发者微信：xiaoniaoliaoyu</p>
   </div>
 
   <!-- Result Area (will be populated by JS) -->
@@ -781,6 +782,7 @@ function renderCoreResults(bazi, wuxingPower, analysis, dayunResult, ui) {
   parts.push('<div id="slot-career"></div>');
   parts.push('<div id="slot-marriage"></div>');
   parts.push('<div id="slot-action"></div>');
+  parts.push('<div style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:32px;padding-bottom:16px;">如有疑问，请添加开发者微信：xiaoniaoliaoyu</div>');
   container.innerHTML = parts.join('');
 
   // 分3批异步加载分析内容，避免一次性渲染阻塞
